@@ -5,25 +5,26 @@ import (
 	"net"
 	"sync"
 	"sync/atomic"
-	"time"
 	"wentmin/protocol"
 )
 
 type Session struct {
-	conn         net.Conn
-	closed       int32                  //session是否关闭，-1未开启，0未关闭，1关闭
-	protocol     protocol.ProtocolInter //字节序和自己处理器
-	lock         sync.Mutex             //协程锁
-	sessionGroup *sync.WaitGroup        //session的group，用于accept协程阻塞等待
+	conn        net.Conn
+	closed      int32                  //session是否关闭，-1未开启，0未关闭，1关闭
+	protocol    protocol.ProtocolInter //字节序和自己处理器
+	lock        sync.Mutex             //协程锁
+	SocketId    int
+	closeNotify chan struct{} //当accept主动关闭session协程通知
 }
 
 func NewSession(connt net.Conn,
-	sw *sync.WaitGroup) *Session {
+	soId int) *Session {
 	sess := &Session{
-		conn:         connt,
-		closed:       -1,
-		protocol:     new(protocol.ProtocolImpl),
-		sessionGroup: sw,
+		conn:        connt,
+		closed:      -1,
+		protocol:    new(protocol.ProtocolImpl),
+		SocketId:    soId,
+		closeNotify: make(chan struct{}),
 	}
 	tcpConn := sess.conn.(*net.TCPConn)
 	tcpConn.SetNoDelay(true)
@@ -46,31 +47,19 @@ func (se *Session) Start() {
 func (se *Session) Close() error {
 	if atomic.CompareAndSwapInt32(&se.closed, 0, 1) {
 		se.conn.Close()
-		se.sessionGroup.Done()
 	}
 	return nil
 }
 
-//set read time out
-//if u don't need to set read deadline, please not use it
-func (se *Session) SetReadDeadline(delt time.Duration) {
-	se.conn.SetReadDeadline(time.Now().Add(delt)) // timeout
-}
-
-//goroutine safe
-func (se *Session) SafeSetReadDeadline(delt time.Duration) {
-	se.lock.Lock()
-	se.conn.SetReadDeadline(time.Now().Add(delt)) // timeout
-	defer se.lock.Unlock()
-}
-
 func (se *Session) recvLoop() {
-	defer se.Close()
+	defer TcpServerInst.OnSessionClosed(se.SocketId)
 	var packet interface{}
 	var err error
 	for {
 
 		select {
+		case <-se.closeNotify:
+			return
 		case <-AcceptClose:
 			return
 		default:

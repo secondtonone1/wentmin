@@ -12,6 +12,8 @@ import (
 
 var PacketChan chan *protocol.MsgPacket
 var AcceptClose chan struct{}
+var SocketIndex int
+var TcpServerInst *WtServer = nil
 
 func init() {
 	PacketChan = make(chan *protocol.MsgPacket, components.MaxMsgQueLen)
@@ -31,8 +33,10 @@ func NewTcpServer() (*WtServer, error) {
 		return nil, common.ErrListenFailed
 	}
 
-	return &WtServer{listener: listenert,
-		once: &sync.Once{}, sessionGroup: &sync.WaitGroup{}, notifyMain: make(chan struct{})}, nil
+	TcpServerInst = &WtServer{listener: listenert,
+		once: &sync.Once{}, sessionGroup: &sync.WaitGroup{},
+		notifyMain: make(chan struct{}), sessionMap: make(map[int]*Session)}
+	return TcpServerInst, nil
 }
 
 type WtServer struct {
@@ -40,6 +44,8 @@ type WtServer struct {
 	once         *sync.Once
 	sessionGroup *sync.WaitGroup
 	notifyMain   chan struct{}
+	sessionMap   map[int]*Session
+	sessionLock  sync.Mutex
 }
 
 //主协程主动关闭accept
@@ -51,6 +57,13 @@ func (wt *WtServer) Close() {
 	})
 }
 
+func (wt *WtServer) OnSessConnect(se *Session) {
+	wt.sessionLock.Lock()
+	defer wt.sessionLock.Unlock()
+	wt.sessionGroup.Add(1)
+	wt.sessionMap[se.SocketId] = se
+}
+
 func (wt *WtServer) acceptLoop() error {
 
 	tcpConn, err := wt.listener.Accept()
@@ -58,11 +71,11 @@ func (wt *WtServer) acceptLoop() error {
 		fmt.Println("Accept error!, err is ", err.Error())
 		return common.ErrAcceptFailed
 	}
-
-	newsess := NewSession(tcpConn, wt.sessionGroup)
+	SocketIndex++
+	newsess := NewSession(tcpConn, SocketIndex)
 	fmt.Println("A client connected :" + tcpConn.RemoteAddr().String())
 	newsess.Start()
-	wt.sessionGroup.Add(1)
+	wt.OnSessConnect(newsess)
 	return nil
 
 }
@@ -88,4 +101,30 @@ func (wt *WtServer) AcceptLoop() {
 
 func (wt *WtServer) WaitClose() chan struct{} {
 	return wt.notifyMain
+}
+
+func (wt *WtServer) CloseSession(sid int) {
+	wt.sessionLock.Lock()
+	defer wt.sessionLock.Unlock()
+	session, ok := wt.sessionMap[sid]
+	if !ok {
+		fmt.Println("not found session by id ", sid)
+		return
+	}
+	close(session.closeNotify)
+}
+
+//连接断开回调函数
+func (wt *WtServer) OnSessionClosed(sid int) {
+	wt.sessionLock.Lock()
+	defer wt.sessionLock.Unlock()
+	session, ok := wt.sessionMap[sid]
+	if !ok {
+		fmt.Println("not found session by id ", sid)
+		return
+	}
+	session.Close()
+	delete(wt.sessionMap, sid)
+	wt.sessionGroup.Done()
+	fmt.Printf("session id %d closed successfully", sid)
 }
