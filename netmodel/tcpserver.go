@@ -83,9 +83,6 @@ func (wt *WtServer) OnSessConnect(se *Session) {
 	wt.sessionGroup.Add(1)
 	se.SocketId = wt.GenerateSocket()
 	wt.sessionMap[se.SocketId] = se
-	fmt.Println("ssssssssssssssssssss")
-	fmt.Println("session map is ", wt.sessionMap)
-
 	se.Start()
 }
 
@@ -113,7 +110,6 @@ func (wt *WtServer) AcceptLoop() {
 		wt.ClearSessions()
 		close(AcceptClose)
 		wt.sessionGroup.Wait()
-		fmt.Println("aaaaaaaaaaaaaaaaaaaaaaaaaa")
 		MsgWatiGroup.Wait()
 		OutputWaitGroup.Wait()
 		close(wt.notifyMain)
@@ -147,7 +143,6 @@ func (wt *WtServer) ClearSessions() {
 func (wt *WtServer) CloseSession(sid int) {
 	wt.sessionLock.Lock()
 	defer wt.sessionLock.Unlock()
-	fmt.Println("mmmmmmmmmmmmmmmmmmmmm")
 	session, ok := wt.sessionMap[sid]
 	if !ok {
 		fmt.Println("not found session by id ", sid)
@@ -168,7 +163,6 @@ func (wt *WtServer) OnSessionClosed(sid int) {
 
 	wt.sessionLock.Lock()
 	defer wt.sessionLock.Unlock()
-	fmt.Println("kkkkkkkkkkkkkkkkk")
 	session, ok := wt.sessionMap[sid]
 	if !ok {
 		fmt.Printf("not found session by %d , maybe it has been closed \n", sid)
