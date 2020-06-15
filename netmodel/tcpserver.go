@@ -80,15 +80,16 @@ func (wt *WtServer) acceptLoop() error {
 func (wt *WtServer) AcceptLoop() {
 	fmt.Println("Server begin accept ...")
 	defer func() {
-		fmt.Println("main io goroutin exit ")
 		if err := recover(); err != nil {
 			fmt.Println("server recover from err , err is ", err)
 		}
+		wt.ClearSessions()
 		close(AcceptClose)
 		wt.sessionGroup.Wait()
 		MsgWatiGroup.Wait()
 		OutputWaitGroup.Wait()
 		close(wt.notifyMain)
+		fmt.Println("main io goroutin exit ")
 	}()
 	for {
 		if err := wt.acceptLoop(); err != nil {
@@ -102,6 +103,18 @@ func (wt *WtServer) WaitClose() chan struct{} {
 	return wt.notifyMain
 }
 
+//服务器关闭所有连接
+func (wt *WtServer) ClearSessions() {
+	wt.sessionLock.Lock()
+	defer wt.sessionLock.Unlock()
+	for id, ss := range wt.sessionMap {
+		ss.Close()
+		delete(wt.sessionMap, id)
+		wt.sessionGroup.Done()
+	}
+}
+
+//服务器主动关闭session
 func (wt *WtServer) CloseSession(sid int) {
 	wt.sessionLock.Lock()
 	defer wt.sessionLock.Unlock()
@@ -110,7 +123,10 @@ func (wt *WtServer) CloseSession(sid int) {
 		fmt.Println("not found session by id ", sid)
 		return
 	}
-	close(session.closeNotify)
+	session.Close()
+	delete(wt.sessionMap, sid)
+	wt.sessionGroup.Done()
+	fmt.Printf("session id %d closed successfully", sid)
 }
 
 //连接断开回调函数
@@ -123,7 +139,7 @@ func (wt *WtServer) OnSessionClosed(sid int) {
 	defer wt.sessionLock.Unlock()
 	session, ok := wt.sessionMap[sid]
 	if !ok {
-		fmt.Println("not found session by id ", sid)
+		fmt.Printf("not found session by %d , maybe it has been closed \n", sid)
 		return
 	}
 	session.Close()

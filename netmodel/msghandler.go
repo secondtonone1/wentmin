@@ -11,7 +11,7 @@ type MsgHandlerInter interface {
 	RegMsgHandler(param interface{}) error
 }
 
-type CallBackFunc func(session interface{}, param interface{}) error
+type CallBackFunc func(session *Session, param *protocol.MsgPacket) error
 type MsgHandlerImpl struct {
 	cbfuncs map[uint16]CallBackFunc
 	rwlock  sync.RWMutex
@@ -38,7 +38,7 @@ func (mh *MsgHandlerImpl) HandleMsgPacket(param interface{}, se interface{}) err
 		return common.ErrMsgHandlerReg
 	}
 
-	return callback(session, param)
+	return callback(session, msgpacket)
 }
 
 func (mh *MsgHandlerImpl) RegMsgHandler(cbid uint16, param interface{}) error {
@@ -79,7 +79,7 @@ func (mh *MsgHandlerImpl) SafeHandleMsgPacket(param interface{}, se interface{})
 		return common.ErrMsgHandlerReg
 	}
 
-	return callback(session, param)
+	return callback(session, msgpacket)
 }
 
 //goroutine safe

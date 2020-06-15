@@ -1,16 +1,19 @@
 syntax = "proto3";  //指定版本，必须要写（proto3、proto2）  
-package proto;
+package wtproto;
 //protoc --gofast_out=. *.proto
 
 message CSUserReg{
-	int32 accountid = 1;
-    int32 token = 2;
+	string accountid = 1;  //账号
+    string passwd = 2;     //密码
 }
 
 message SCUserReg{
     int32 errid = 1;
-	int32 accountid = 2;
-    int32 token = 3;
+	string accountid = 2;  //账号
+    string passwd = 3;     //密码
+    string token = 4;      //服务器生成的token
 }
+
+
 
 

@@ -44,3 +44,8 @@ var (
 	ErrDBHandlerExit       = errors.New("DBHandler exit success")
 	ErrLogInit             = errors.New("Log Init Failed!")
 )
+
+//errorid 回复码
+const (
+	RSP_SUCCESS = 1
+)

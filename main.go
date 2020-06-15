@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	_ "wentmin/logic"
 	"wentmin/netmodel"
 )
 

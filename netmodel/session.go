@@ -8,12 +8,11 @@ import (
 )
 
 type Session struct {
-	conn        net.Conn
-	closed      int32                  //session是否关闭，-1未开启，0未关闭，1关闭
-	protocol    protocol.ProtocolInter //字节序和自己处理器
-	RWLock      sync.RWMutex           //协程锁
-	SocketId    int
-	closeNotify chan struct{} //当accept主动关闭session协程通知
+	conn     net.Conn
+	closed   int32                  //session是否关闭，-1未开启，0未关闭，1关闭
+	protocol protocol.ProtocolInter //字节序和自己处理器
+	RWLock   sync.RWMutex           //协程锁
+	SocketId int
 }
 
 type MsgSession struct {
@@ -24,17 +23,22 @@ type MsgSession struct {
 func NewSession(connt net.Conn,
 	soId int) *Session {
 	sess := &Session{
-		conn:        connt,
-		closed:      -1,
-		protocol:    new(protocol.ProtocolImpl),
-		SocketId:    soId,
-		closeNotify: make(chan struct{}),
+		conn:     connt,
+		closed:   -1,
+		protocol: new(protocol.ProtocolImpl),
+		SocketId: soId,
 	}
 	tcpConn := sess.conn.(*net.TCPConn)
 	tcpConn.SetNoDelay(true)
 	tcpConn.SetReadBuffer(64 * 1024)
 	tcpConn.SetWriteBuffer(64 * 1024)
 	return sess
+}
+
+func (se *Session) GetSocketId() int {
+	se.RWLock.RLock()
+	defer se.RWLock.Unlock()
+	return se.SocketId
 }
 
 func (se *Session) RawConn() *net.TCPConn {
@@ -85,8 +89,6 @@ func (se *Session) recvLoop() {
 	for {
 
 		select {
-		case <-se.closeNotify:
-			return
 		case <-AcceptClose:
 			return
 		default:
