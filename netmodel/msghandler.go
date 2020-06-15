@@ -1,6 +1,7 @@
 package netmodel
 
 import (
+	"fmt"
 	"sync"
 	"wentmin/common"
 	"wentmin/protocol"
@@ -32,7 +33,7 @@ func (mh *MsgHandlerImpl) HandleMsgPacket(param interface{}, se interface{}) err
 	if session, ok = se.(*Session); !ok {
 		return common.ErrTypeAssertain
 	}
-
+	fmt.Printf("begin to handle msg id %d \n", msgpacket.Head.Id)
 	if callback, ok = mh.cbfuncs[msgpacket.Head.Id]; !ok {
 		//不存在
 		return common.ErrMsgHandlerReg
@@ -48,10 +49,12 @@ func (mh *MsgHandlerImpl) RegMsgHandler(cbid uint16, param interface{}) error {
 	)
 
 	if callback, ok = param.(CallBackFunc); !ok {
+		fmt.Printf("msg id %d reg failed \n", cbid)
 		return common.ErrParamCallBack
 	}
 
 	mh.cbfuncs[cbid] = callback
+	fmt.Printf("msgid %d reg success \n", cbid)
 	return nil
 }
 

@@ -37,7 +37,7 @@ func NewSession(connt net.Conn,
 
 func (se *Session) GetSocketId() int {
 	se.RWLock.RLock()
-	defer se.RWLock.Unlock()
+	defer se.RWLock.RUnlock()
 	return se.SocketId
 }
 

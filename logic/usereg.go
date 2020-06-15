@@ -11,7 +11,7 @@ import (
 
 func init() {
 	fmt.Println("reg user req")
-	netmodel.GetMsgHandlerIns().RegMsgHandler(common.USER_REG_CS, UserReg)
+	netmodel.GetMsgHandlerIns().RegMsgHandler(common.USER_REG_CS, netmodel.CallBackFunc(UserReg))
 }
 
 func UserReg(session *netmodel.Session, msgpkg *protocol.MsgPacket) error {
