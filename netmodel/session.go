@@ -21,12 +21,11 @@ type MsgSession struct {
 }
 
 func NewSession(connt net.Conn,
-	soId int) *Session {
+) *Session {
 	sess := &Session{
 		conn:     connt,
 		closed:   -1,
 		protocol: new(protocol.ProtocolImpl),
-		SocketId: soId,
 	}
 	tcpConn := sess.conn.(*net.TCPConn)
 	tcpConn.SetNoDelay(true)
@@ -95,7 +94,7 @@ func (se *Session) recvLoop() {
 			{
 				packet, err = se.Read()
 				if packet == nil || err != nil {
-					fmt.Println("Read packet error ", err.Error())
+					//fmt.Println("Read packet error ", err.Error())
 					return
 				}
 				msgs := new(MsgSession)

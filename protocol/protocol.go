@@ -55,7 +55,7 @@ func (pi *ProtocolImpl) ReadPacket(conn net.Conn) (interface{}, error) {
 	buff := make([]byte, 4)
 	_, err := io.ReadAtLeast(conn, buff[:4], 4)
 	if err != nil {
-		fmt.Println(err.Error())
+		//fmt.Println("read at least error ", err.Error())
 		return nil, common.ErrReadAtLeast
 	}
 
@@ -77,7 +77,7 @@ func (pi *ProtocolImpl) ReadPacket(conn net.Conn) (interface{}, error) {
 	}
 
 	if _, err = io.ReadFull(conn, msgpacket.Body.Data[:msgpacket.Head.Len]); err != nil {
-		fmt.Println("err is ", err.Error())
+		//fmt.Println("err is ", err.Error())
 		return nil, common.ErrReadAtLeast
 	}
 
@@ -103,10 +103,10 @@ func (pi *ProtocolImpl) WritePacket(conn net.Conn, packet interface{}) error {
 	if err := stream.WriteBuff(msgpacket.Body.Data); err != nil {
 		return common.ErrWritePacketFailed
 	}
-	wn, err := conn.Write(buff)
+	_, err := conn.Write(buff)
 	if err != nil {
 		return common.ErrConnWriteFailed
 	}
-	fmt.Println("write bytes ", wn)
+	//fmt.Println("write bytes ", wn)
 	return nil
 }

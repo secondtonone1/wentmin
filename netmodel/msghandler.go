@@ -12,9 +12,8 @@ type MsgHandlerInter interface {
 	RegMsgHandler(param interface{}) error
 }
 
-type CallBackFunc func(session *Session, param *protocol.MsgPacket) error
 type MsgHandlerImpl struct {
-	cbfuncs map[uint16]CallBackFunc
+	cbfuncs map[uint16]func(session *Session, param *protocol.MsgPacket) error
 	rwlock  sync.RWMutex
 }
 
@@ -22,7 +21,7 @@ func (mh *MsgHandlerImpl) HandleMsgPacket(param interface{}, se interface{}) err
 
 	var (
 		msgpacket *protocol.MsgPacket
-		callback  CallBackFunc
+		callback  func(session *Session, param *protocol.MsgPacket) error
 		ok        bool
 		session   *Session
 	)
@@ -44,11 +43,11 @@ func (mh *MsgHandlerImpl) HandleMsgPacket(param interface{}, se interface{}) err
 
 func (mh *MsgHandlerImpl) RegMsgHandler(cbid uint16, param interface{}) error {
 	var (
-		callback CallBackFunc
+		callback func(session *Session, param *protocol.MsgPacket) error
 		ok       bool
 	)
 
-	if callback, ok = param.(CallBackFunc); !ok {
+	if callback, ok = param.(func(session *Session, param *protocol.MsgPacket) error); !ok {
 		fmt.Printf("msg id %d reg failed \n", cbid)
 		return common.ErrParamCallBack
 	}
@@ -65,7 +64,7 @@ func (mh *MsgHandlerImpl) SafeHandleMsgPacket(param interface{}, se interface{})
 
 	var (
 		msgpacket *protocol.MsgPacket
-		callback  CallBackFunc
+		callback  func(session *Session, param *protocol.MsgPacket) error
 		ok        bool
 		session   *Session
 	)
@@ -90,11 +89,11 @@ func (mh *MsgHandlerImpl) SafeRegMsgHandler(cbid uint16, param interface{}) erro
 	mh.rwlock.Lock()
 	defer mh.rwlock.Unlock()
 	var (
-		callback CallBackFunc
+		callback func(session *Session, param *protocol.MsgPacket) error
 		ok       bool
 	)
 
-	if callback, ok = param.(CallBackFunc); !ok {
+	if callback, ok = param.(func(session *Session, param *protocol.MsgPacket) error); !ok {
 		return common.ErrParamCallBack
 	}
 
@@ -107,7 +106,7 @@ var once sync.Once
 
 func GetMsgHandlerIns() *MsgHandlerImpl {
 	once.Do(func() {
-		ins = &MsgHandlerImpl{cbfuncs: make(map[uint16]CallBackFunc)}
+		ins = &MsgHandlerImpl{cbfuncs: make(map[uint16]func(session *Session, param *protocol.MsgPacket) error)}
 	})
 	return ins
 }

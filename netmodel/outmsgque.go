@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sync"
 	"wentmin/components"
+	"wentmin/protocol"
 )
 
 var OutMsgQueInst *OutMsgQue
@@ -54,9 +55,13 @@ func (oq *OutMsgQue) ReadFromOutQue(index int) {
 	}
 }
 
-func (oq *OutMsgQue) PostMsgtoOutQue(index int, msgse *MsgSession) {
+func (oq *OutMsgQue) PostMsgtoOutQue(sess *Session, msgpkg *protocol.MsgPacket) {
 
-	msgchan := oq.GetMsgChanByIndex(index)
+	msgse := new(MsgSession)
+	msgse.session = sess
+	msgse.packet = msgpkg
+
+	msgchan := oq.GetMsgChanByIndex(msgse.session.GetSocketId() % components.OutputQueNum)
 	if msgchan == nil {
 		return
 	}
@@ -85,4 +90,8 @@ func NewOutMsgQues() {
 		go OutMsgQueInst.ReadFromOutQue(i)
 		OutputWaitGroup.Add(1)
 	}
+}
+
+func PostMsgOut(sess *Session, msgpkg *protocol.MsgPacket) {
+	OutMsgQueInst.PostMsgtoOutQue(sess, msgpkg)
 }
