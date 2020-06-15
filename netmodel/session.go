@@ -4,15 +4,17 @@ import (
 	"fmt"
 	"net"
 	"sync"
+	"time"
 	"wentmin/protocol"
 )
 
 type Session struct {
-	conn     net.Conn
-	closed   int32                  //session是否关闭，-1未开启，0未关闭，1关闭
-	protocol protocol.ProtocolInter //字节序和自己处理器
-	RWLock   sync.RWMutex           //协程锁
-	SocketId int
+	conn      net.Conn
+	closed    int32                  //session是否关闭，-1未开启，0未关闭，1关闭
+	protocol  protocol.ProtocolInter //字节序和自己处理器
+	RWLock    sync.RWMutex           //协程锁
+	SocketId  int
+	AliveTime int64
 }
 
 type MsgSession struct {
@@ -23,9 +25,10 @@ type MsgSession struct {
 func NewSession(connt net.Conn,
 ) *Session {
 	sess := &Session{
-		conn:     connt,
-		closed:   -1,
-		protocol: new(protocol.ProtocolImpl),
+		conn:      connt,
+		closed:    -1,
+		protocol:  new(protocol.ProtocolImpl),
+		AliveTime: time.Now().Unix(),
 	}
 	tcpConn := sess.conn.(*net.TCPConn)
 	tcpConn.SetNoDelay(true)

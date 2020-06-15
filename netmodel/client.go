@@ -61,3 +61,7 @@ func (cs *ClientSess) Recv() (interface{}, error) {
 
 	return packet, nil
 }
+
+func (cs *ClientSess) Close() {
+	cs.conn.Close()
+}

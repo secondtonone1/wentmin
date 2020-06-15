@@ -32,6 +32,9 @@ func main() {
 	case <-netmodel.OutMsgQueInst.WaitClose():
 		fmt.Println("catch output msg queue closed ")
 		wt.Close()
+	case <-netmodel.WaitAliveClose():
+		fmt.Println("catch alive watcher goroutine close")
+		wt.Close()
 	}
 	<-wt.WaitClose()
 	fmt.Println("wt server closed successfully ")

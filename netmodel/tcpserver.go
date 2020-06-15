@@ -5,6 +5,7 @@ import (
 	"net"
 	"strconv"
 	"sync"
+	"time"
 	"wentmin/common"
 	"wentmin/components"
 )
@@ -13,14 +14,12 @@ var PacketChan chan *MsgSession
 var AcceptClose chan struct{}
 
 var TcpServerInst *WtServer = nil
+var AliveClose chan struct{}
 
 func init() {
 	PacketChan = make(chan *MsgSession, components.MaxMsgQueLen)
 	AcceptClose = make(chan struct{})
-	//创建消息处理队列
-	NewMsgQueue()
-	//创建消息发送队列
-	NewOutMsgQues()
+	AliveClose = make(chan struct{})
 }
 func NewTcpServer() (*WtServer, error) {
 	address := "0.0.0.0:" + strconv.Itoa(components.ServerPort)
@@ -34,6 +33,13 @@ func NewTcpServer() (*WtServer, error) {
 		once: &sync.Once{}, sessionGroup: &sync.WaitGroup{},
 		notifyMain: make(chan struct{}), sessionMap: make(map[int]*Session),
 		SocketIndex: 0, UnUsedSocketMap: make(map[int]bool)}
+
+	//创建消息处理队列
+	NewMsgQueue()
+	//创建消息发送队列
+	NewOutMsgQues()
+	//启动心跳监听协程
+	go TcpServerInst.OnCheckAlive()
 	return TcpServerInst, nil
 }
 
@@ -112,6 +118,7 @@ func (wt *WtServer) AcceptLoop() {
 		wt.sessionGroup.Wait()
 		MsgWatiGroup.Wait()
 		OutputWaitGroup.Wait()
+		<-WaitAliveClose()
 		close(wt.notifyMain)
 		fmt.Println("main io goroutin exit ")
 	}()
@@ -136,6 +143,7 @@ func (wt *WtServer) ClearSessions() {
 		delete(wt.sessionMap, id)
 		wt.RecycleSocket(id)
 		wt.sessionGroup.Done()
+		fmt.Printf("session id %d closed successfully\n", id)
 	}
 }
 
@@ -173,4 +181,45 @@ func (wt *WtServer) OnSessionClosed(sid int) {
 	wt.RecycleSocket(sid)
 	wt.sessionGroup.Done()
 	fmt.Printf("session id %d closed successfully\n", sid)
+}
+
+func (wt *WtServer) ClearDeadSession() {
+	wt.sessionLock.Lock()
+	defer wt.sessionLock.Unlock()
+	cur := time.Now().Unix()
+	for _, session := range wt.sessionMap {
+		if cur-session.AliveTime > 60*60 {
+			session.Close()
+			delete(wt.sessionMap, session.SocketId)
+			wt.RecycleSocket(session.SocketId)
+			wt.sessionGroup.Done()
+			fmt.Printf("session id %d closed successfully\n", session.SocketId)
+		}
+	}
+}
+
+func (wt *WtServer) OnCheckAlive() {
+	t1 := time.NewTimer(10 * time.Second)
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Println("timer recover from error ", err)
+		}
+		t1.Stop()
+		close(AliveClose)
+	}()
+	for {
+		select {
+		case <-AcceptClose:
+			return
+		case <-t1.C:
+			fmt.Println("timer tick now")
+			wt.ClearDeadSession()
+			t1.Reset(10 * time.Second)
+			continue
+		}
+	}
+}
+
+func WaitAliveClose() chan struct{} {
+	return AliveClose
 }
