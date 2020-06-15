@@ -1,0 +1,16 @@
+syntax = "proto3";  //指定版本，必须要写（proto3、proto2）  
+package proto;
+//protoc --gofast_out=. *.proto
+
+message CSUserReg{
+	int32 accountid = 1;
+    int32 token = 2;
+}
+
+message SCUserReg{
+    int32 errid = 1;
+	int32 accountid = 2;
+    int32 token = 3;
+}
+
+

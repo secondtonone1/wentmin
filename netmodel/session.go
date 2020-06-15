@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net"
 	"sync"
-	"sync/atomic"
 	"wentmin/protocol"
 )
 
@@ -12,9 +11,14 @@ type Session struct {
 	conn        net.Conn
 	closed      int32                  //session是否关闭，-1未开启，0未关闭，1关闭
 	protocol    protocol.ProtocolInter //字节序和自己处理器
-	lock        sync.Mutex             //协程锁
+	RWLock      sync.RWMutex           //协程锁
 	SocketId    int
 	closeNotify chan struct{} //当accept主动关闭session协程通知
+}
+
+type MsgSession struct {
+	session *Session
+	packet  *protocol.MsgPacket
 }
 
 func NewSession(connt net.Conn,
@@ -34,21 +38,44 @@ func NewSession(connt net.Conn,
 }
 
 func (se *Session) RawConn() *net.TCPConn {
+	se.RWLock.RLock()
+	defer se.RWLock.RUnlock()
 	return se.conn.(*net.TCPConn)
 }
 
 func (se *Session) Start() {
-	if atomic.CompareAndSwapInt32(&se.closed, -1, 0) {
-		go se.recvLoop()
+	se.RWLock.Lock()
+	defer se.RWLock.Unlock()
+	if se.closed != -1 {
+		return
 	}
+
+	se.closed = 0
+	go se.recvLoop()
+
 }
 
 // Close the session, destory other resource.
 func (se *Session) Close() error {
-	if atomic.CompareAndSwapInt32(&se.closed, 0, 1) {
-		se.conn.Close()
+	se.RWLock.Lock()
+	defer se.RWLock.Unlock()
+	if se.closed != 0 {
+		return nil
 	}
+
+	se.closed = 1
+	se.conn.Close()
+
 	return nil
+}
+
+func (se *Session) Write(msgpkg *protocol.MsgPacket) {
+	se.protocol.WritePacket(se.conn, msgpkg)
+}
+
+func (se *Session) Read() (interface{}, error) {
+	packet, err := se.protocol.ReadPacket(se.conn)
+	return packet, err
 }
 
 func (se *Session) recvLoop() {
@@ -64,18 +91,20 @@ func (se *Session) recvLoop() {
 			return
 		default:
 			{
-				packet, err = se.protocol.ReadPacket(se.conn)
+				packet, err = se.Read()
 				if packet == nil || err != nil {
 					fmt.Println("Read packet error ", err.Error())
 					return
 				}
-
-				//handle msg packet
-				hdres := GetMsgHandlerIns().HandleMsgPacket(packet, se)
-				if hdres != nil {
-					fmt.Println(hdres.Error())
+				msgs := new(MsgSession)
+				msgs.packet = packet.(*protocol.MsgPacket)
+				msgs.session = se
+				err = MsgQueueInst.PutMsgInQue(msgs)
+				if err != nil {
+					fmt.Println("put msg into queue failed , err is ", err.Error())
 					return
 				}
+
 			}
 
 		}

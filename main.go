@@ -25,6 +25,12 @@ func main() {
 		wt.Close()
 	case <-wt.WaitClose():
 		fmt.Println("catch wt server closed ")
+	case <-netmodel.MsgQueueInst.WaitClose():
+		fmt.Println("catch msgqueue closed")
+		wt.Close()
+	case <-netmodel.OutMsgQueInst.WaitClose():
+		fmt.Println("catch output msg queue closed ")
+		wt.Close()
 	}
 	<-wt.WaitClose()
 	fmt.Println("wt server closed successfully ")

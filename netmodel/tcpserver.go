@@ -7,23 +7,20 @@ import (
 	"sync"
 	"wentmin/common"
 	"wentmin/components"
-	"wentmin/protocol"
 )
 
-var PacketChan chan *protocol.MsgPacket
+var PacketChan chan *MsgSession
 var AcceptClose chan struct{}
 var SocketIndex int
 var TcpServerInst *WtServer = nil
 
 func init() {
-	PacketChan = make(chan *protocol.MsgPacket, components.MaxMsgQueLen)
+	PacketChan = make(chan *MsgSession, components.MaxMsgQueLen)
 	AcceptClose = make(chan struct{})
+	//创建消息处理队列
 	NewMsgQueue()
-	for i := 0; i < components.MaxMsgQueNum; i++ {
-		go MsgQueueInst.ReadFromChan()
-		MsgWatiGroup.Add(1)
-	}
-
+	//创建消息发送队列
+	NewOutMsgQues()
 }
 func NewTcpServer() (*WtServer, error) {
 	address := "0.0.0.0:" + strconv.Itoa(components.ServerPort)
@@ -89,6 +86,8 @@ func (wt *WtServer) AcceptLoop() {
 		}
 		close(AcceptClose)
 		wt.sessionGroup.Wait()
+		MsgWatiGroup.Wait()
+		OutputWaitGroup.Wait()
 		close(wt.notifyMain)
 	}()
 	for {
@@ -116,6 +115,10 @@ func (wt *WtServer) CloseSession(sid int) {
 
 //连接断开回调函数
 func (wt *WtServer) OnSessionClosed(sid int) {
+	if err := recover(); err != nil {
+		fmt.Println(" recover from error ", err)
+	}
+
 	wt.sessionLock.Lock()
 	defer wt.sessionLock.Unlock()
 	session, ok := wt.sessionMap[sid]

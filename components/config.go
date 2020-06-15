@@ -13,6 +13,8 @@ var ServerPort = 9091
 var MaxMsgLen uint16 = 2048
 var MaxMsgQueLen int = 2048
 var MaxMsgQueNum int = 1
+var OutputQueNum int = 2
+var OutputQueLen int = 2048
 
 func init() {
 	BConfig, err := config.NewConfig("ini", "config/server.conf")
@@ -63,4 +65,17 @@ func init() {
 		fmt.Println("server max_msg_queue_num read failed ")
 		return
 	}
+
+	OutputQueNum, err = BConfig.Int("server::output_queue_num")
+	if err != nil {
+		fmt.Println("server server::output_queue_num read failed ")
+		return
+	}
+
+	OutputQueLen, err = BConfig.Int("server::output_queue_len")
+	if err != nil {
+		fmt.Println("server server::output_queue_len read failed ")
+		return
+	}
+
 }
