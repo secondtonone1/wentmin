@@ -8,6 +8,8 @@ import (
 	"time"
 	"wentmin/common"
 	"wentmin/components"
+
+	"github.com/astaxie/beego/logs"
 )
 
 var PacketChan chan *MsgSession
@@ -26,6 +28,7 @@ func NewTcpServer() (*WtServer, error) {
 	listenert, err := net.Listen("tcp", address)
 	if err != nil {
 		fmt.Println("listen failed !!!")
+		logs.Debug("listen failed !!!")
 		return nil, common.ErrListenFailed
 	}
 
@@ -64,7 +67,7 @@ func (wt *WtServer) Close() {
 }
 
 func (wt *WtServer) GenerateSocket() int {
-	fmt.Println("unused socket map is ", wt.UnUsedSocketMap)
+	//fmt.Println("unused socket map is ", wt.UnUsedSocketMap)
 	if len(wt.UnUsedSocketMap) == 0 {
 		wt.SocketIndex++
 		return wt.SocketIndex
@@ -80,7 +83,7 @@ func (wt *WtServer) GenerateSocket() int {
 
 func (wt *WtServer) RecycleSocket(socket int) {
 	wt.UnUsedSocketMap[socket] = true
-	fmt.Println("after RecycleSocket, unusedsocket map is ", wt.UnUsedSocketMap)
+	//fmt.Println("after RecycleSocket, unusedsocket map is ", wt.UnUsedSocketMap)
 }
 
 func (wt *WtServer) OnSessConnect(se *Session) {
@@ -97,11 +100,13 @@ func (wt *WtServer) acceptLoop() error {
 	tcpConn, err := wt.listener.Accept()
 	if err != nil {
 		fmt.Println("Accept error!, err is ", err.Error())
+		logs.Debug("Accept error!, err is ", err.Error())
 		return common.ErrAcceptFailed
 	}
 
 	newsess := NewSession(tcpConn)
 	fmt.Println("A client connected :" + tcpConn.RemoteAddr().String())
+	logs.Debug("A client connected :" + tcpConn.RemoteAddr().String())
 	wt.OnSessConnect(newsess)
 	return nil
 
@@ -109,9 +114,11 @@ func (wt *WtServer) acceptLoop() error {
 
 func (wt *WtServer) AcceptLoop() {
 	fmt.Println("Server begin accept ...")
+	logs.Debug("Server begin accept ...")
 	defer func() {
 		if err := recover(); err != nil {
 			fmt.Println("server recover from err , err is ", err)
+			logs.Debug("server recover from err , err is ", err)
 		}
 		wt.ClearSessions()
 		close(AcceptClose)
@@ -121,10 +128,12 @@ func (wt *WtServer) AcceptLoop() {
 		<-WaitAliveClose()
 		close(wt.notifyMain)
 		fmt.Println("main io goroutin exit ")
+		logs.Debug("main io goroutin exit ")
 	}()
 	for {
 		if err := wt.acceptLoop(); err != nil {
 			fmt.Println("went server accept failed!! ")
+			logs.Debug("went server accept failed!! ")
 			return
 		}
 	}
@@ -144,6 +153,7 @@ func (wt *WtServer) ClearSessions() {
 		wt.RecycleSocket(id)
 		wt.sessionGroup.Done()
 		fmt.Printf("session id %d closed successfully\n", id)
+		logs.Debug("session id %d closed successfully\n", id)
 	}
 }
 
@@ -154,6 +164,7 @@ func (wt *WtServer) CloseSession(sid int) {
 	session, ok := wt.sessionMap[sid]
 	if !ok {
 		fmt.Println("not found session by id ", sid)
+		logs.Debug("not found session by id ", sid)
 		return
 	}
 	session.Close()
@@ -161,12 +172,14 @@ func (wt *WtServer) CloseSession(sid int) {
 	wt.RecycleSocket(sid)
 	wt.sessionGroup.Done()
 	fmt.Printf("session id %d closed successfully\n", sid)
+	logs.Debug("session id %d closed successfully\n", sid)
 }
 
 //连接断开回调函数
 func (wt *WtServer) OnSessionClosed(sid int) {
 	if err := recover(); err != nil {
 		fmt.Println(" recover from error ", err)
+		logs.Debug(" recover from error ", err)
 	}
 
 	wt.sessionLock.Lock()
@@ -174,6 +187,7 @@ func (wt *WtServer) OnSessionClosed(sid int) {
 	session, ok := wt.sessionMap[sid]
 	if !ok {
 		fmt.Printf("not found session by %d , maybe it has been closed \n", sid)
+		logs.Debug("not found session by %d , maybe it has been closed \n", sid)
 		return
 	}
 	session.Close()
@@ -181,6 +195,7 @@ func (wt *WtServer) OnSessionClosed(sid int) {
 	wt.RecycleSocket(sid)
 	wt.sessionGroup.Done()
 	fmt.Printf("session id %d closed successfully\n", sid)
+	logs.Debug("session id %d closed successfully\n", sid)
 }
 
 func (wt *WtServer) ClearDeadSession() {
@@ -194,6 +209,7 @@ func (wt *WtServer) ClearDeadSession() {
 			wt.RecycleSocket(session.SocketId)
 			wt.sessionGroup.Done()
 			fmt.Printf("session id %d closed successfully\n", session.SocketId)
+			logs.Debug("session id %d closed successfully\n", session.SocketId)
 		}
 	}
 }
@@ -203,6 +219,7 @@ func (wt *WtServer) OnCheckAlive() {
 	defer func() {
 		if err := recover(); err != nil {
 			fmt.Println("timer recover from error ", err)
+			logs.Debug("timer recover from error ", err)
 		}
 		t1.Stop()
 		close(AliveClose)
@@ -213,6 +230,7 @@ func (wt *WtServer) OnCheckAlive() {
 			return
 		case <-t1.C:
 			fmt.Println("timer tick now")
+			logs.Debug("timer tick now")
 			wt.ClearDeadSession()
 			t1.Reset(10 * time.Second)
 			continue

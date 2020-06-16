@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 	"wentmin/protocol"
+
+	"github.com/astaxie/beego/logs"
 )
 
 type Session struct {
@@ -106,6 +108,7 @@ func (se *Session) recvLoop() {
 				err = MsgQueueInst.PutMsgInQue(msgs)
 				if err != nil {
 					fmt.Println("put msg into queue failed , err is ", err.Error())
+					logs.Debug("put msg into queue failed , err is ", err.Error())
 					return
 				}
 

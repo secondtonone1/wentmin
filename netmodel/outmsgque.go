@@ -5,6 +5,8 @@ import (
 	"sync"
 	"wentmin/components"
 	"wentmin/protocol"
+
+	"github.com/astaxie/beego/logs"
 )
 
 var OutMsgQueInst *OutMsgQue
@@ -22,6 +24,7 @@ func (oq *OutMsgQue) GetMsgChanByIndex(index int) chan *MsgSession {
 	msgchan, ok := oq.MsgChanMap[index]
 	if !ok {
 		fmt.Println("not found output msgchan by index ", index)
+		logs.Debug("not found output msgchan by index ", index)
 		return nil
 	}
 	return msgchan
@@ -31,10 +34,12 @@ func (oq *OutMsgQue) GetMsgChanByIndex(index int) chan *MsgSession {
 func (oq *OutMsgQue) OnGoroutinClose() {
 	if err := recover(); err != nil {
 		fmt.Println("out msg queue goroutine recover from error ", err)
+		logs.Debug("out msg queue goroutine recover from error ", err)
 	}
 	oq.CloseNotify <- struct{}{}
 	OutputWaitGroup.Done()
 	fmt.Println("out msg queue goroutine exited ")
+	logs.Debug("out msg queue goroutine exited ")
 }
 
 func (oq *OutMsgQue) ReadFromOutQue(index int) {

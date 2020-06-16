@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"sync"
 	"wentmin/components"
+
+	"github.com/astaxie/beego/logs"
 )
 
 type MsgQueue struct {
@@ -25,6 +27,7 @@ func NewMsgQueue() {
 
 func (mq *MsgQueue) OnClose() {
 	fmt.Println("MsgQueue exit !")
+	logs.Debug("MsgQueue exit !")
 	MsgQueueClose <- struct{}{}
 	MsgWatiGroup.Done()
 }
@@ -38,6 +41,7 @@ func (mq *MsgQueue) ReadFromChan() {
 	defer func() {
 		if err := recover(); err != nil {
 			fmt.Println("msg queue recover from error ", err)
+			logs.Debug("msg queue recover from error ", err)
 		}
 		mq.OnClose()
 	}()
@@ -55,6 +59,8 @@ func (mq *MsgQueue) ReadFromChan() {
 				if hdres != nil {
 					fmt.Printf("handle msg failed, msgid is %d, error is %s\n",
 						msgs.packet.Head.Id, hdres.Error())
+					logs.Debug("handle msg failed, msgid is %d, error is %s\n",
+						msgs.packet.Head.Id, hdres.Error())
 					return
 				}
 				continue
@@ -63,6 +69,8 @@ func (mq *MsgQueue) ReadFromChan() {
 			hdres := GetMsgHandlerIns().HandleMsgPacket(msgs.packet, msgs.session)
 			if hdres != nil {
 				fmt.Printf("handle msg failed, msgid is %d, error is %s\n",
+					msgs.packet.Head.Id, hdres.Error())
+				logs.Debug("handle msg failed, msgid is %d, error is %s\n",
 					msgs.packet.Head.Id, hdres.Error())
 				return
 			}
