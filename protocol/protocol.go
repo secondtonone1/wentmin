@@ -1,6 +1,7 @@
 package protocol
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -66,6 +67,10 @@ func (pi *ProtocolImpl) ReadPacket(conn net.Conn) (interface{}, error) {
 	if !ok {
 		fmt.Println("it's not msgpacket type")
 		return nil, common.ErrTypeAssertain
+	}
+
+	if components.MaxMsgId < msgpacket.Head.Id {
+		return nil, errors.New("msg id is too big")
 	}
 
 	if components.MaxMsgLen < msgpacket.Head.Len {

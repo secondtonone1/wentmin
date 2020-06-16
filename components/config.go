@@ -15,6 +15,7 @@ var MaxMsgQueLen int = 2048
 var MaxMsgQueNum int = 1
 var OutputQueNum int = 2
 var OutputQueLen int = 2048
+var MaxMsgId uint16 = 9999
 
 func init() {
 	BConfig, err := config.NewConfig("ini", "config/server.conf")
@@ -77,5 +78,13 @@ func init() {
 		fmt.Println("server server::output_queue_len read failed ")
 		return
 	}
+
+	msgid, err := BConfig.Int("server::max_msg_id")
+	if err != nil {
+		fmt.Println("server server::max_msg_id read failed ")
+		return
+	}
+
+	MaxMsgId = uint16(msgid)
 
 }

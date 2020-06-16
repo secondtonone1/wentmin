@@ -2,6 +2,13 @@ package common
 
 import "errors"
 
+//errorid 回复码
+const (
+	RSP_SUCCESS         = 1
+	RSP_USER_NOT_FOUND  = 2
+	RSP_USER_NOT_ONLINE = 3
+)
+
 var (
 	ErrListenFailed        = errors.New("Listen Failed Error")
 	ErrAcceptFailed        = errors.New("Accept Failed Error")
@@ -43,9 +50,4 @@ var (
 	ErrAllSaveRoutineExit  = errors.New("All Save Routines exit")
 	ErrDBHandlerExit       = errors.New("DBHandler exit success")
 	ErrLogInit             = errors.New("Log Init Failed!")
-)
-
-//errorid 回复码
-const (
-	RSP_SUCCESS = 1
 )

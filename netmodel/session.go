@@ -70,6 +70,12 @@ func (se *Session) UpdateAlive(now int64) {
 	se.AliveTime = now
 }
 
+func (se *Session) IsClosed() bool {
+	se.RWLock.RLock()
+	defer se.RWLock.RUnlock()
+	return se.closed == 1
+}
+
 func (se *Session) Start() {
 	se.RWLock.Lock()
 	defer se.RWLock.Unlock()
