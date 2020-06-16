@@ -38,6 +38,9 @@ msgbody为消息体，其内部其实是一个字节数组data,具体长度为ms
 
 protocol 定义了报文的读写，目前按照大端模式读写。
 
+### main函数
+main函数是server的入口函数， 直接go run -race main.go 就可以启动server了。
+
 ## 服务器发送消息
 如我们要发送"Haaaa"， 服务器先将"Haaaa"通过proto序列化，假设生成的字节流为"hello"
 id 为我们定义的消息id，假设为1001, 将1001以大端模式写入两字节
