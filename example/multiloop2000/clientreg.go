@@ -82,7 +82,7 @@ func CreateClient(id int) {
 			fmt.Println("user reg success ")
 			fmt.Println("user account is ", scusereg.Accountid)
 			fmt.Println("user passwd is ", scusereg.Passwd)
-			fmt.Println("user token is ", scusereg.Token)
+			fmt.Println("user phone is ", scusereg.Phone)
 			time.Sleep(time.Second)
 		}
 

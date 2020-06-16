@@ -25,6 +25,7 @@ const (
 // of the legacy proto package is being used.
 const _ = proto.ProtoPackageIsVersion4
 
+//用户注册请求
 type CSUserReg struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -32,6 +33,7 @@ type CSUserReg struct {
 
 	Accountid string `protobuf:"bytes,1,opt,name=accountid,proto3" json:"accountid,omitempty"` //账号
 	Passwd    string `protobuf:"bytes,2,opt,name=passwd,proto3" json:"passwd,omitempty"`       //密码
+	Phone     string `protobuf:"bytes,3,opt,name=phone,proto3" json:"phone,omitempty"`         //留备用电话
 }
 
 func (x *CSUserReg) Reset() {
@@ -80,6 +82,14 @@ func (x *CSUserReg) GetPasswd() string {
 	return ""
 }
 
+func (x *CSUserReg) GetPhone() string {
+	if x != nil {
+		return x.Phone
+	}
+	return ""
+}
+
+//用户注册回复
 type SCUserReg struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -88,7 +98,7 @@ type SCUserReg struct {
 	Errid     int32  `protobuf:"varint,1,opt,name=errid,proto3" json:"errid,omitempty"`
 	Accountid string `protobuf:"bytes,2,opt,name=accountid,proto3" json:"accountid,omitempty"` //账号
 	Passwd    string `protobuf:"bytes,3,opt,name=passwd,proto3" json:"passwd,omitempty"`       //密码
-	Token     string `protobuf:"bytes,4,opt,name=token,proto3" json:"token,omitempty"`         //服务器生成的token
+	Phone     string `protobuf:"bytes,4,opt,name=phone,proto3" json:"phone,omitempty"`         //留备用电话
 }
 
 func (x *SCUserReg) Reset() {
@@ -144,7 +154,455 @@ func (x *SCUserReg) GetPasswd() string {
 	return ""
 }
 
-func (x *SCUserReg) GetToken() string {
+func (x *SCUserReg) GetPhone() string {
+	if x != nil {
+		return x.Phone
+	}
+	return ""
+}
+
+//用户呼叫请求
+type CSUserCall struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Caller   string `protobuf:"bytes,1,opt,name=caller,proto3" json:"caller,omitempty"`     //发起呼叫的人的账号
+	Becalled string `protobuf:"bytes,2,opt,name=becalled,proto3" json:"becalled,omitempty"` //被呼叫人的账号
+}
+
+func (x *CSUserCall) Reset() {
+	*x = CSUserCall{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_userreg_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *CSUserCall) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CSUserCall) ProtoMessage() {}
+
+func (x *CSUserCall) ProtoReflect() protoreflect.Message {
+	mi := &file_userreg_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CSUserCall.ProtoReflect.Descriptor instead.
+func (*CSUserCall) Descriptor() ([]byte, []int) {
+	return file_userreg_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *CSUserCall) GetCaller() string {
+	if x != nil {
+		return x.Caller
+	}
+	return ""
+}
+
+func (x *CSUserCall) GetBecalled() string {
+	if x != nil {
+		return x.Becalled
+	}
+	return ""
+}
+
+//服务器转发呼叫请求给被呼叫人
+type SCNotifyBeCalled struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Caller   string `protobuf:"bytes,1,opt,name=caller,proto3" json:"caller,omitempty"`     //发起呼叫的人的账号
+	Becalled string `protobuf:"bytes,2,opt,name=becalled,proto3" json:"becalled,omitempty"` //被呼叫人的账号
+}
+
+func (x *SCNotifyBeCalled) Reset() {
+	*x = SCNotifyBeCalled{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_userreg_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *SCNotifyBeCalled) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SCNotifyBeCalled) ProtoMessage() {}
+
+func (x *SCNotifyBeCalled) ProtoReflect() protoreflect.Message {
+	mi := &file_userreg_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SCNotifyBeCalled.ProtoReflect.Descriptor instead.
+func (*SCNotifyBeCalled) Descriptor() ([]byte, []int) {
+	return file_userreg_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *SCNotifyBeCalled) GetCaller() string {
+	if x != nil {
+		return x.Caller
+	}
+	return ""
+}
+
+func (x *SCNotifyBeCalled) GetBecalled() string {
+	if x != nil {
+		return x.Becalled
+	}
+	return ""
+}
+
+//被呼叫人回复消息给服务器
+type CSReplyBeCalled struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Caller   string `protobuf:"bytes,1,opt,name=caller,proto3" json:"caller,omitempty"`     //发起呼叫的人的账号
+	Becalled string `protobuf:"bytes,2,opt,name=becalled,proto3" json:"becalled,omitempty"` //被呼叫的人的账号
+	Agree    bool   `protobuf:"varint,3,opt,name=agree,proto3" json:"agree,omitempty"`      //是否同意
+}
+
+func (x *CSReplyBeCalled) Reset() {
+	*x = CSReplyBeCalled{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_userreg_proto_msgTypes[4]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *CSReplyBeCalled) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CSReplyBeCalled) ProtoMessage() {}
+
+func (x *CSReplyBeCalled) ProtoReflect() protoreflect.Message {
+	mi := &file_userreg_proto_msgTypes[4]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CSReplyBeCalled.ProtoReflect.Descriptor instead.
+func (*CSReplyBeCalled) Descriptor() ([]byte, []int) {
+	return file_userreg_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *CSReplyBeCalled) GetCaller() string {
+	if x != nil {
+		return x.Caller
+	}
+	return ""
+}
+
+func (x *CSReplyBeCalled) GetBecalled() string {
+	if x != nil {
+		return x.Becalled
+	}
+	return ""
+}
+
+func (x *CSReplyBeCalled) GetAgree() bool {
+	if x != nil {
+		return x.Agree
+	}
+	return false
+}
+
+//服务器回复发起人呼叫结果
+type SCUserCall struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Errid    int32  `protobuf:"varint,1,opt,name=errid,proto3" json:"errid,omitempty"`      //0，成功，非0失败
+	Caller   string `protobuf:"bytes,2,opt,name=caller,proto3" json:"caller,omitempty"`     //发起呼叫的人的账号
+	Becalled string `protobuf:"bytes,3,opt,name=becalled,proto3" json:"becalled,omitempty"` //被呼叫人的账号
+	Phone    string `protobuf:"bytes,4,opt,name=phone,proto3" json:"phone,omitempty"`       //如果被呼叫人不在，返回备注电话
+}
+
+func (x *SCUserCall) Reset() {
+	*x = SCUserCall{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_userreg_proto_msgTypes[5]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *SCUserCall) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SCUserCall) ProtoMessage() {}
+
+func (x *SCUserCall) ProtoReflect() protoreflect.Message {
+	mi := &file_userreg_proto_msgTypes[5]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SCUserCall.ProtoReflect.Descriptor instead.
+func (*SCUserCall) Descriptor() ([]byte, []int) {
+	return file_userreg_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *SCUserCall) GetErrid() int32 {
+	if x != nil {
+		return x.Errid
+	}
+	return 0
+}
+
+func (x *SCUserCall) GetCaller() string {
+	if x != nil {
+		return x.Caller
+	}
+	return ""
+}
+
+func (x *SCUserCall) GetBecalled() string {
+	if x != nil {
+		return x.Becalled
+	}
+	return ""
+}
+
+func (x *SCUserCall) GetPhone() string {
+	if x != nil {
+		return x.Phone
+	}
+	return ""
+}
+
+//服务器通知呼叫人和被呼叫人进行视频语音通话
+type SCNotifyChat struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Caller   string `protobuf:"bytes,1,opt,name=caller,proto3" json:"caller,omitempty"`     //发起呼叫的人的账号
+	Becalled string `protobuf:"bytes,2,opt,name=becalled,proto3" json:"becalled,omitempty"` //被呼叫的人的账号
+	Token    string `protobuf:"bytes,3,opt,name=token,proto3" json:"token,omitempty"`       //用于通信的token
+}
+
+func (x *SCNotifyChat) Reset() {
+	*x = SCNotifyChat{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_userreg_proto_msgTypes[6]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *SCNotifyChat) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SCNotifyChat) ProtoMessage() {}
+
+func (x *SCNotifyChat) ProtoReflect() protoreflect.Message {
+	mi := &file_userreg_proto_msgTypes[6]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SCNotifyChat.ProtoReflect.Descriptor instead.
+func (*SCNotifyChat) Descriptor() ([]byte, []int) {
+	return file_userreg_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *SCNotifyChat) GetCaller() string {
+	if x != nil {
+		return x.Caller
+	}
+	return ""
+}
+
+func (x *SCNotifyChat) GetBecalled() string {
+	if x != nil {
+		return x.Becalled
+	}
+	return ""
+}
+
+func (x *SCNotifyChat) GetToken() string {
+	if x != nil {
+		return x.Token
+	}
+	return ""
+}
+
+//客户端终止通话
+type CSTerminateChat struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Caller   string `protobuf:"bytes,1,opt,name=caller,proto3" json:"caller,omitempty"`     //发起呼叫的人的账号
+	Becalled string `protobuf:"bytes,2,opt,name=becalled,proto3" json:"becalled,omitempty"` //被呼叫的人的账号
+	Token    string `protobuf:"bytes,3,opt,name=token,proto3" json:"token,omitempty"`       //用于通信的token
+}
+
+func (x *CSTerminateChat) Reset() {
+	*x = CSTerminateChat{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_userreg_proto_msgTypes[7]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *CSTerminateChat) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CSTerminateChat) ProtoMessage() {}
+
+func (x *CSTerminateChat) ProtoReflect() protoreflect.Message {
+	mi := &file_userreg_proto_msgTypes[7]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CSTerminateChat.ProtoReflect.Descriptor instead.
+func (*CSTerminateChat) Descriptor() ([]byte, []int) {
+	return file_userreg_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *CSTerminateChat) GetCaller() string {
+	if x != nil {
+		return x.Caller
+	}
+	return ""
+}
+
+func (x *CSTerminateChat) GetBecalled() string {
+	if x != nil {
+		return x.Becalled
+	}
+	return ""
+}
+
+func (x *CSTerminateChat) GetToken() string {
+	if x != nil {
+		return x.Token
+	}
+	return ""
+}
+
+//服务器回复终止通话
+type SCTerminateChat struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Errid    int32  `protobuf:"varint,1,opt,name=errid,proto3" json:"errid,omitempty"`
+	Caller   string `protobuf:"bytes,2,opt,name=caller,proto3" json:"caller,omitempty"`     //发起呼叫的人的账号
+	Becalled string `protobuf:"bytes,3,opt,name=becalled,proto3" json:"becalled,omitempty"` //被呼叫的人的账号
+	Token    string `protobuf:"bytes,4,opt,name=token,proto3" json:"token,omitempty"`       //用于通信的token
+}
+
+func (x *SCTerminateChat) Reset() {
+	*x = SCTerminateChat{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_userreg_proto_msgTypes[8]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *SCTerminateChat) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SCTerminateChat) ProtoMessage() {}
+
+func (x *SCTerminateChat) ProtoReflect() protoreflect.Message {
+	mi := &file_userreg_proto_msgTypes[8]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SCTerminateChat.ProtoReflect.Descriptor instead.
+func (*SCTerminateChat) Descriptor() ([]byte, []int) {
+	return file_userreg_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *SCTerminateChat) GetErrid() int32 {
+	if x != nil {
+		return x.Errid
+	}
+	return 0
+}
+
+func (x *SCTerminateChat) GetCaller() string {
+	if x != nil {
+		return x.Caller
+	}
+	return ""
+}
+
+func (x *SCTerminateChat) GetBecalled() string {
+	if x != nil {
+		return x.Becalled
+	}
+	return ""
+}
+
+func (x *SCTerminateChat) GetToken() string {
 	if x != nil {
 		return x.Token
 	}
@@ -155,19 +613,60 @@ var File_userreg_proto protoreflect.FileDescriptor
 
 var file_userreg_proto_rawDesc = []byte{
 	0x0a, 0x0d, 0x75, 0x73, 0x65, 0x72, 0x72, 0x65, 0x67, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12,
-	0x07, 0x77, 0x74, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x41, 0x0a, 0x09, 0x43, 0x53, 0x55, 0x73,
+	0x07, 0x77, 0x74, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x57, 0x0a, 0x09, 0x43, 0x53, 0x55, 0x73,
 	0x65, 0x72, 0x52, 0x65, 0x67, 0x12, 0x1c, 0x0a, 0x09, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74,
 	0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e,
 	0x74, 0x69, 0x64, 0x12, 0x16, 0x0a, 0x06, 0x70, 0x61, 0x73, 0x73, 0x77, 0x64, 0x18, 0x02, 0x20,
-	0x01, 0x28, 0x09, 0x52, 0x06, 0x70, 0x61, 0x73, 0x73, 0x77, 0x64, 0x22, 0x6d, 0x0a, 0x09, 0x53,
-	0x43, 0x55, 0x73, 0x65, 0x72, 0x52, 0x65, 0x67, 0x12, 0x14, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x69,
-	0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x05, 0x65, 0x72, 0x72, 0x69, 0x64, 0x12, 0x1c,
-	0x0a, 0x09, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x09, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x69, 0x64, 0x12, 0x16, 0x0a, 0x06,
-	0x70, 0x61, 0x73, 0x73, 0x77, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x70, 0x61,
-	0x73, 0x73, 0x77, 0x64, 0x12, 0x14, 0x0a, 0x05, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x18, 0x04, 0x20,
-	0x01, 0x28, 0x09, 0x52, 0x05, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x33,
+	0x01, 0x28, 0x09, 0x52, 0x06, 0x70, 0x61, 0x73, 0x73, 0x77, 0x64, 0x12, 0x14, 0x0a, 0x05, 0x70,
+	0x68, 0x6f, 0x6e, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x70, 0x68, 0x6f, 0x6e,
+	0x65, 0x22, 0x6d, 0x0a, 0x09, 0x53, 0x43, 0x55, 0x73, 0x65, 0x72, 0x52, 0x65, 0x67, 0x12, 0x14,
+	0x0a, 0x05, 0x65, 0x72, 0x72, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x05, 0x65,
+	0x72, 0x72, 0x69, 0x64, 0x12, 0x1c, 0x0a, 0x09, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x69,
+	0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74,
+	0x69, 0x64, 0x12, 0x16, 0x0a, 0x06, 0x70, 0x61, 0x73, 0x73, 0x77, 0x64, 0x18, 0x03, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x06, 0x70, 0x61, 0x73, 0x73, 0x77, 0x64, 0x12, 0x14, 0x0a, 0x05, 0x70, 0x68,
+	0x6f, 0x6e, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x70, 0x68, 0x6f, 0x6e, 0x65,
+	0x22, 0x40, 0x0a, 0x0a, 0x43, 0x53, 0x55, 0x73, 0x65, 0x72, 0x43, 0x61, 0x6c, 0x6c, 0x12, 0x16,
+	0x0a, 0x06, 0x63, 0x61, 0x6c, 0x6c, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06,
+	0x63, 0x61, 0x6c, 0x6c, 0x65, 0x72, 0x12, 0x1a, 0x0a, 0x08, 0x62, 0x65, 0x63, 0x61, 0x6c, 0x6c,
+	0x65, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x62, 0x65, 0x63, 0x61, 0x6c, 0x6c,
+	0x65, 0x64, 0x22, 0x46, 0x0a, 0x10, 0x53, 0x43, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x42, 0x65,
+	0x43, 0x61, 0x6c, 0x6c, 0x65, 0x64, 0x12, 0x16, 0x0a, 0x06, 0x63, 0x61, 0x6c, 0x6c, 0x65, 0x72,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x63, 0x61, 0x6c, 0x6c, 0x65, 0x72, 0x12, 0x1a,
+	0x0a, 0x08, 0x62, 0x65, 0x63, 0x61, 0x6c, 0x6c, 0x65, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x08, 0x62, 0x65, 0x63, 0x61, 0x6c, 0x6c, 0x65, 0x64, 0x22, 0x5b, 0x0a, 0x0f, 0x43, 0x53,
+	0x52, 0x65, 0x70, 0x6c, 0x79, 0x42, 0x65, 0x43, 0x61, 0x6c, 0x6c, 0x65, 0x64, 0x12, 0x16, 0x0a,
+	0x06, 0x63, 0x61, 0x6c, 0x6c, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x63,
+	0x61, 0x6c, 0x6c, 0x65, 0x72, 0x12, 0x1a, 0x0a, 0x08, 0x62, 0x65, 0x63, 0x61, 0x6c, 0x6c, 0x65,
+	0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x62, 0x65, 0x63, 0x61, 0x6c, 0x6c, 0x65,
+	0x64, 0x12, 0x14, 0x0a, 0x05, 0x61, 0x67, 0x72, 0x65, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x08,
+	0x52, 0x05, 0x61, 0x67, 0x72, 0x65, 0x65, 0x22, 0x6c, 0x0a, 0x0a, 0x53, 0x43, 0x55, 0x73, 0x65,
+	0x72, 0x43, 0x61, 0x6c, 0x6c, 0x12, 0x14, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x69, 0x64, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x05, 0x52, 0x05, 0x65, 0x72, 0x72, 0x69, 0x64, 0x12, 0x16, 0x0a, 0x06, 0x63,
+	0x61, 0x6c, 0x6c, 0x65, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x63, 0x61, 0x6c,
+	0x6c, 0x65, 0x72, 0x12, 0x1a, 0x0a, 0x08, 0x62, 0x65, 0x63, 0x61, 0x6c, 0x6c, 0x65, 0x64, 0x18,
+	0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x62, 0x65, 0x63, 0x61, 0x6c, 0x6c, 0x65, 0x64, 0x12,
+	0x14, 0x0a, 0x05, 0x70, 0x68, 0x6f, 0x6e, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05,
+	0x70, 0x68, 0x6f, 0x6e, 0x65, 0x22, 0x58, 0x0a, 0x0c, 0x53, 0x43, 0x4e, 0x6f, 0x74, 0x69, 0x66,
+	0x79, 0x43, 0x68, 0x61, 0x74, 0x12, 0x16, 0x0a, 0x06, 0x63, 0x61, 0x6c, 0x6c, 0x65, 0x72, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x63, 0x61, 0x6c, 0x6c, 0x65, 0x72, 0x12, 0x1a, 0x0a,
+	0x08, 0x62, 0x65, 0x63, 0x61, 0x6c, 0x6c, 0x65, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x08, 0x62, 0x65, 0x63, 0x61, 0x6c, 0x6c, 0x65, 0x64, 0x12, 0x14, 0x0a, 0x05, 0x74, 0x6f, 0x6b,
+	0x65, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x22,
+	0x5b, 0x0a, 0x0f, 0x43, 0x53, 0x54, 0x65, 0x72, 0x6d, 0x69, 0x6e, 0x61, 0x74, 0x65, 0x43, 0x68,
+	0x61, 0x74, 0x12, 0x16, 0x0a, 0x06, 0x63, 0x61, 0x6c, 0x6c, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x06, 0x63, 0x61, 0x6c, 0x6c, 0x65, 0x72, 0x12, 0x1a, 0x0a, 0x08, 0x62, 0x65,
+	0x63, 0x61, 0x6c, 0x6c, 0x65, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x62, 0x65,
+	0x63, 0x61, 0x6c, 0x6c, 0x65, 0x64, 0x12, 0x14, 0x0a, 0x05, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x18,
+	0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x22, 0x71, 0x0a, 0x0f,
+	0x53, 0x43, 0x54, 0x65, 0x72, 0x6d, 0x69, 0x6e, 0x61, 0x74, 0x65, 0x43, 0x68, 0x61, 0x74, 0x12,
+	0x14, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x05,
+	0x65, 0x72, 0x72, 0x69, 0x64, 0x12, 0x16, 0x0a, 0x06, 0x63, 0x61, 0x6c, 0x6c, 0x65, 0x72, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x63, 0x61, 0x6c, 0x6c, 0x65, 0x72, 0x12, 0x1a, 0x0a,
+	0x08, 0x62, 0x65, 0x63, 0x61, 0x6c, 0x6c, 0x65, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x08, 0x62, 0x65, 0x63, 0x61, 0x6c, 0x6c, 0x65, 0x64, 0x12, 0x14, 0x0a, 0x05, 0x74, 0x6f, 0x6b,
+	0x65, 0x6e, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x62,
+	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -182,10 +681,17 @@ func file_userreg_proto_rawDescGZIP() []byte {
 	return file_userreg_proto_rawDescData
 }
 
-var file_userreg_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_userreg_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_userreg_proto_goTypes = []interface{}{
-	(*CSUserReg)(nil), // 0: wtproto.CSUserReg
-	(*SCUserReg)(nil), // 1: wtproto.SCUserReg
+	(*CSUserReg)(nil),        // 0: wtproto.CSUserReg
+	(*SCUserReg)(nil),        // 1: wtproto.SCUserReg
+	(*CSUserCall)(nil),       // 2: wtproto.CSUserCall
+	(*SCNotifyBeCalled)(nil), // 3: wtproto.SCNotifyBeCalled
+	(*CSReplyBeCalled)(nil),  // 4: wtproto.CSReplyBeCalled
+	(*SCUserCall)(nil),       // 5: wtproto.SCUserCall
+	(*SCNotifyChat)(nil),     // 6: wtproto.SCNotifyChat
+	(*CSTerminateChat)(nil),  // 7: wtproto.CSTerminateChat
+	(*SCTerminateChat)(nil),  // 8: wtproto.SCTerminateChat
 }
 var file_userreg_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -225,6 +731,90 @@ func file_userreg_proto_init() {
 				return nil
 			}
 		}
+		file_userreg_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*CSUserCall); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_userreg_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*SCNotifyBeCalled); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_userreg_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*CSReplyBeCalled); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_userreg_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*SCUserCall); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_userreg_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*SCNotifyChat); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_userreg_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*CSTerminateChat); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_userreg_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*SCTerminateChat); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -232,7 +822,7 @@ func file_userreg_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_userreg_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

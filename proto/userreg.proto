@@ -1,19 +1,68 @@
 syntax = "proto3";  //指定版本，必须要写（proto3、proto2）  
 package wtproto;
 //protoc --gofast_out=. *.proto
+//protoc --go_out=. *.proto
 
+//用户注册请求
 message CSUserReg{
 	string accountid = 1;  //账号
     string passwd = 2;     //密码
+    string phone  = 3;     //留备用电话
 }
 
+//用户注册回复
 message SCUserReg{
     int32 errid = 1;
 	string accountid = 2;  //账号
     string passwd = 3;     //密码
-    string token = 4;      //服务器生成的token
+    string phone = 4;      //留备用电话
 }
 
+//用户呼叫请求
+message CSUserCall{
+    string caller = 1;    //发起呼叫的人的账号
+    string becalled = 2; //被呼叫人的账号
+}
 
+//服务器转发呼叫请求给被呼叫人
+message SCNotifyBeCalled{
+    string caller = 1;     //发起呼叫的人的账号
+    string becalled = 2;   //被呼叫人的账号
+}
 
+//被呼叫人回复消息给服务器
+message CSReplyBeCalled{
+    string caller = 1;     //发起呼叫的人的账号
+    string becalled = 2;   //被呼叫的人的账号
+    bool agree = 3;        //是否同意
+}
 
+//服务器回复发起人呼叫结果
+message SCUserCall{
+    int32 errid = 1;     //0，成功，非0失败
+    string caller = 2;    //发起呼叫的人的账号
+    string becalled = 3; //被呼叫人的账号
+    string phone = 4;    //如果被呼叫人不在，返回备注电话
+}
+
+//服务器通知呼叫人和被呼叫人进行视频语音通话
+message SCNotifyChat{
+    string caller = 1 ;   //发起呼叫的人的账号
+    string becalled = 2;  //被呼叫的人的账号
+    string token  = 3;    //用于通信的token
+}
+
+//客户端终止通话
+message CSTerminateChat {
+    string caller = 1;    //发起呼叫的人的账号
+    string becalled = 2;  //被呼叫的人的账号
+    string token = 3 ;    //用于通信的token
+}
+
+//服务器回复终止通话
+message SCTerminateChat {
+    int32 errid = 1;
+    string caller = 2;    //发起呼叫的人的账号
+    string becalled = 3;  //被呼叫的人的账号
+    string token = 4 ;    //用于通信的token
+}

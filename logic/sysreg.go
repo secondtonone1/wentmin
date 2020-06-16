@@ -17,7 +17,7 @@ func init() {
 func OnSessionClosed(session *netmodel.Session, msgpkg *protocol.MsgPacket) error {
 	fmt.Printf("socket id [%d], lastsocketid [%d], session closed \n", session.GetSocketId(), session.GetLastSocket())
 	logs.Debug("socket id [%d], lastsocketid [%d], session closed \n", session.GetSocketId(), session.GetLastSocket())
-	//做应用层
+	//做应用层连接断开处理
 
 	return nil
 }

@@ -1,10 +1,8 @@
 package logic
 
 import (
-	"crypto/md5"
 	"fmt"
 	"protobuf/proto"
-	"time"
 	"wentmin/common"
 	"wentmin/netmodel"
 	wtproto "wentmin/proto"
@@ -32,19 +30,21 @@ func UserReg(session *netmodel.Session, msgpkg *protocol.MsgPacket) error {
 	fmt.Println("user passwd is ", userreg.Passwd)
 	logs.Debug("user account id is ", userreg.Accountid)
 	logs.Debug("user passwd is ", userreg.Passwd)
-
+	logs.Debug("user phone is ", userreg.Phone)
+	fmt.Println("user phone is ", userreg.Phone)
 	userregrsp := &wtproto.SCUserReg{}
 	userregrsp.Errid = common.RSP_SUCCESS
 	userregrsp.Passwd = userreg.Passwd
+	/*
+		timestr := time.Now().Format("2006-01-02 15:04:05")
 
-	timestr := time.Now().Format("2006-01-02 15:04:05")
-
-	tokenstr := fmt.Sprintf("%x", md5.Sum([]byte(userreg.Accountid+timestr)))
-	fmt.Println("token str is ", tokenstr)
-	logs.Debug("token str is ", tokenstr)
-	userregrsp.Token = tokenstr
+		tokenstr := fmt.Sprintf("%x", md5.Sum([]byte(userreg.Accountid+timestr)))
+		fmt.Println("token str is ", tokenstr)
+		logs.Debug("token str is ", tokenstr)
+		userregrsp.Token = tokenstr
+	*/
 	userregrsp.Accountid = userreg.Accountid
-
+	userregrsp.Phone = userreg.Phone
 	pData, err := proto.Marshal(userregrsp)
 	if err != nil {
 		fmt.Println(common.ErrProtobuffMarshal.Error())

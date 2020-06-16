@@ -61,7 +61,7 @@ func main() {
 		fmt.Println("user reg success ")
 		fmt.Println("user account is ", scusereg.Accountid)
 		fmt.Println("user passwd is ", scusereg.Passwd)
-		fmt.Println("user token is ", scusereg.Token)
+		fmt.Println("user phone is ", scusereg.Phone)
 	}
 
 	for i := 0; i < 2050; i++ {
