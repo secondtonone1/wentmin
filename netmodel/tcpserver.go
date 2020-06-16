@@ -68,7 +68,7 @@ func (wt *WtServer) Close() {
 
 func (wt *WtServer) GenerateSocket() int {
 	//fmt.Println("unused socket map is ", wt.UnUsedSocketMap)
-	if len(wt.UnUsedSocketMap) == 0 {
+	if len(wt.UnUsedSocketMap) < 20 {
 		wt.SocketIndex++
 		return wt.SocketIndex
 	}
@@ -120,6 +120,7 @@ func (wt *WtServer) AcceptLoop() {
 			fmt.Println("server recover from err , err is ", err)
 			logs.Debug("server recover from err , err is ", err)
 		}
+		//先清除连接
 		wt.ClearSessions()
 		close(AcceptClose)
 		wt.sessionGroup.Wait()
@@ -149,6 +150,8 @@ func (wt *WtServer) ClearSessions() {
 	defer wt.sessionLock.Unlock()
 	for id, ss := range wt.sessionMap {
 		ss.Close()
+		//清除所有连接，意味着服务器可能要官服，那么就不投递连接断开消息
+		//MsgQueueInst.PutCloseMsgInQue(session)
 		delete(wt.sessionMap, id)
 		wt.RecycleSocket(id)
 		wt.sessionGroup.Done()
@@ -168,6 +171,7 @@ func (wt *WtServer) CloseSession(sid int) {
 		return
 	}
 	session.Close()
+	MsgQueueInst.PutCloseMsgInQue(session)
 	delete(wt.sessionMap, sid)
 	wt.RecycleSocket(sid)
 	wt.sessionGroup.Done()
@@ -191,6 +195,7 @@ func (wt *WtServer) OnSessionClosed(sid int) {
 		return
 	}
 	session.Close()
+	MsgQueueInst.PutCloseMsgInQue(session)
 	delete(wt.sessionMap, sid)
 	wt.RecycleSocket(sid)
 	wt.sessionGroup.Done()
@@ -206,6 +211,7 @@ func (wt *WtServer) ClearDeadSession() {
 		if !session.CheckAlive(cur) {
 			fmt.Printf("session id %d not alive ", session.SocketId)
 			session.Close()
+			MsgQueueInst.PutCloseMsgInQue(session)
 			delete(wt.sessionMap, session.SocketId)
 			wt.RecycleSocket(session.SocketId)
 			wt.sessionGroup.Done()

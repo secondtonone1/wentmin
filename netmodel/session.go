@@ -11,12 +11,13 @@ import (
 )
 
 type Session struct {
-	conn      net.Conn
-	closed    int32                  //session是否关闭，-1未开启，0未关闭，1关闭
-	protocol  protocol.ProtocolInter //字节序和自己处理器
-	RWLock    sync.RWMutex           //协程锁
-	SocketId  int
-	AliveTime int64
+	conn       net.Conn
+	closed     int32                  //session是否关闭，-1未开启，0未关闭，1关闭
+	protocol   protocol.ProtocolInter //字节序和自己处理器
+	RWLock     sync.RWMutex           //协程锁
+	SocketId   int                    // 当前socket
+	AliveTime  int64
+	LastSocket int // 上次socket
 }
 
 type MsgSession struct {
@@ -43,6 +44,12 @@ func (se *Session) GetSocketId() int {
 	se.RWLock.RLock()
 	defer se.RWLock.RUnlock()
 	return se.SocketId
+}
+
+func (se *Session) GetLastSocket() int {
+	se.RWLock.RLock()
+	defer se.RWLock.RUnlock()
+	return se.LastSocket
 }
 
 func (se *Session) RawConn() *net.TCPConn {
@@ -82,10 +89,10 @@ func (se *Session) Close() error {
 	if se.closed != 0 {
 		return nil
 	}
-
+	se.LastSocket = se.SocketId
+	se.SocketId = 0
 	se.closed = 1
 	se.conn.Close()
-
 	return nil
 }
 
