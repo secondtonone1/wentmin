@@ -203,7 +203,8 @@ func (wt *WtServer) ClearDeadSession() {
 	defer wt.sessionLock.Unlock()
 	cur := time.Now().Unix()
 	for _, session := range wt.sessionMap {
-		if cur-session.AliveTime > 60*60 {
+		if !session.CheckAlive(cur) {
+			fmt.Printf("session id %d not alive ", session.SocketId)
 			session.Close()
 			delete(wt.sessionMap, session.SocketId)
 			wt.RecycleSocket(session.SocketId)

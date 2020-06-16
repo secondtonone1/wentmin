@@ -51,6 +51,18 @@ func (se *Session) RawConn() *net.TCPConn {
 	return se.conn.(*net.TCPConn)
 }
 
+func (se *Session) CheckAlive(now int64) bool {
+	se.RWLock.RLock()
+	defer se.RWLock.RUnlock()
+	return ((now - se.AliveTime) < 60*60)
+}
+
+func (se *Session) UpdateAlive(now int64) {
+	se.RWLock.Lock()
+	defer se.RWLock.Unlock()
+	se.AliveTime = now
+}
+
 func (se *Session) Start() {
 	se.RWLock.Lock()
 	defer se.RWLock.Unlock()
@@ -102,6 +114,8 @@ func (se *Session) recvLoop() {
 					//fmt.Println("Read packet error ", err.Error())
 					return
 				}
+				cur := time.Now().Unix()
+				se.UpdateAlive(cur)
 				msgs := new(MsgSession)
 				msgs.packet = packet.(*protocol.MsgPacket)
 				msgs.session = se

@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"protobuf/proto"
 	"strconv"
+	"sync"
 	"syscall"
 	"time"
 	"wentmin/common"
@@ -16,6 +17,7 @@ import (
 	"github.com/astaxie/beego/logs"
 )
 
+var wg sync.WaitGroup
 var stopsignal chan os.Signal
 var exitsignal chan struct{}
 
@@ -24,9 +26,11 @@ func CreateClient(id int) {
 	if err != nil {
 		return
 	}
+
 	defer func() {
 		cs.Close()
 	}()
+
 	for {
 		select {
 		case <-exitsignal:
@@ -79,7 +83,7 @@ func CreateClient(id int) {
 			fmt.Println("user account is ", scusereg.Accountid)
 			fmt.Println("user passwd is ", scusereg.Passwd)
 			fmt.Println("user token is ", scusereg.Token)
-			time.Sleep(time.Millisecond * 100)
+			time.Sleep(time.Second)
 		}
 
 	}
@@ -87,7 +91,6 @@ func CreateClient(id int) {
 }
 
 func main() {
-
 	stopsignal = make(chan os.Signal) // 接收系统中断信号
 	var shutdownSignals = []os.Signal{os.Interrupt, syscall.SIGTERM, syscall.SIGINT}
 	signal.Notify(stopsignal, shutdownSignals...)
@@ -101,9 +104,10 @@ func main() {
 		}
 	}()
 
-	for i := 1000; i < 6000; i++ {
+	for i := 1000; i < 3000; i++ {
 		go CreateClient(i)
-		time.Sleep(time.Second)
+		time.Sleep(time.Millisecond * 10)
+
 	}
 	<-exitsignal
 	fmt.Println("main goroutine exit ")
