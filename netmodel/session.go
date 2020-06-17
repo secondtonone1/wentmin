@@ -104,6 +104,7 @@ func (se *Session) Close() error {
 
 func (se *Session) Write(msgpkg *protocol.MsgPacket) {
 	se.protocol.WritePacket(se.conn, msgpkg)
+	fmt.Println("send msg success , msg id is ", msgpkg.Head.Id)
 }
 
 func (se *Session) Read() (interface{}, error) {

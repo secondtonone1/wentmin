@@ -5,8 +5,9 @@ import "errors"
 //errorid 回复码
 const (
 	RSP_SUCCESS         = 0
-	RSP_USER_NOT_FOUND  = 2
-	RSP_USER_NOT_ONLINE = 3
+	RSP_USER_NOT_AGREE  = 1 //被呼叫用户不同意语音
+	RSP_USER_NOT_FOUND  = 2 //用户不存在
+	RSP_USER_NOT_ONLINE = 3 //用户不在线
 )
 
 var (

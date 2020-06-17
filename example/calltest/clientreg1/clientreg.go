@@ -99,5 +99,43 @@ func main() {
 	}
 
 	fmt.Println("callrsp.Head.Id is ", callrsp.Head.Id)
+
+	//等待服务器通知
+	notifyrsps, err := cs.Recv()
+	if err != nil {
+		fmt.Println("receive notifyrsp failed ")
+		return
+	}
+	fmt.Println("..........................")
+	notifyrsp := notifyrsps.(*protocol.MsgPacket)
+	notifychat := &wtproto.SCNotifyChat{}
+	error2 = proto.Unmarshal(notifyrsp.Body.Data, notifychat)
+	if error2 != nil {
+		fmt.Println(common.ErrProtobuffUnMarshal.Error())
+		return
+	}
+
+	fmt.Println("notify chat caller is ", notifychat.Caller)
+	fmt.Println("notify chat becalled is ", notifychat.Becalled)
+
+	terminateCall := &wtproto.CSTerminateChat{}
+	terminateCall.Token = notifychat.Token
+	terminateCall.Caller = notifychat.Caller
+	terminateCall.Becalled = notifychat.Becalled
+
+	cstermcall := &protocol.MsgPacket{}
+	cstermcall.Head.Id = common.CS_TERMINAL_CHAT
+	cstermcall.Body.Data, _ = proto.Marshal(terminateCall)
+	cstermcall.Head.Len = uint16(len(cstermcall.Body.Data))
+	cs.Send(cstermcall)
+
+	terminalrt := &wtproto.SCTerminateChat{}
+	it, err := cs.Recv()
+	sctermcall := it.(*protocol.MsgPacket)
+
+	proto.Unmarshal(sctermcall.Body.Data, terminalrt)
+	fmt.Println("receive terminate reply")
+	fmt.Println("terminalrt.Caller", terminalrt.Caller)
+	fmt.Println("terminalrt.Becalled", terminalrt.Becalled)
 	cs.Close()
 }

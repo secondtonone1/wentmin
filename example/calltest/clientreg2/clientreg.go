@@ -59,7 +59,40 @@ func main() {
 	fmt.Println("user passwd is ", scusereg.Passwd)
 	fmt.Println("user phone is ", scusereg.Phone)
 
-	//等待接收会话消息
+	//等待被呼叫
+	scnbca, _ := cs.Recv()
+	notifyBeCall := scnbca.(*protocol.MsgPacket)
+	notifybc := &wtproto.SCNotifyBeCalled{}
+	proto.Unmarshal(notifyBeCall.Body.Data, notifybc)
+
+	fmt.Println(" becalled is ", notifybc.Becalled)
+	fmt.Println(" caller is ", notifybc.Caller)
+
+	//假设同意,发送同意请求
+	replybc := &wtproto.CSReplyBeCalled{}
+	replybc.Caller = notifybc.Caller
+	replybc.Becalled = notifybc.Becalled
+	replybc.Agree = true
+
+	replybcp := &protocol.MsgPacket{}
+	replybcp.Head.Id = common.CS_NOTIFY_REPLY
+	replybcp.Body.Data, _ = proto.Marshal(replybc)
+	replybcp.Head.Len = uint16(len(replybcp.Body.Data))
+	cs.Send(replybcp)
+
+	//等待服务器通知
+	notifyrsps, _ := cs.Recv()
+
+	notifyrsp := notifyrsps.(*protocol.MsgPacket)
+	notifychat := &wtproto.SCNotifyChat{}
+	error2 = proto.Unmarshal(notifyrsp.Body.Data, notifychat)
+	if error2 != nil {
+		fmt.Println(common.ErrProtobuffUnMarshal.Error())
+		return
+	}
+
+	fmt.Println("notify chat caller is ", notifychat.Caller)
+	fmt.Println("notify chat becalled is ", notifychat.Becalled)
 
 	cs.Close()
 }

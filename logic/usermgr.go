@@ -59,3 +59,7 @@ func (self *UserData) IsOnline() bool {
 
 	return true
 }
+
+func (self *UserData) GetSession() *netmodel.Session {
+	return self.Session
+}
