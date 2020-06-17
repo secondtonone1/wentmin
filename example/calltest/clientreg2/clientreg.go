@@ -19,7 +19,7 @@ func main() {
 	packet.Head.Id = common.USER_REG_CS
 	csusereg := &wtproto.CSUserReg{
 		Accountid: "102",
-		Passwd:    "pawd101",
+		Passwd:    "pawd102",
 		Phone:     "18301152098",
 	}
 
@@ -58,5 +58,8 @@ func main() {
 	fmt.Println("user account is ", scusereg.Accountid)
 	fmt.Println("user passwd is ", scusereg.Passwd)
 	fmt.Println("user phone is ", scusereg.Phone)
+
+	//等待接收会话消息
+
 	cs.Close()
 }

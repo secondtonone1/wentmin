@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"protobuf/proto"
-	"time"
 	"wentmin/common"
 	"wentmin/netmodel"
 	wtproto "wentmin/proto"
@@ -60,14 +59,12 @@ func main() {
 	fmt.Println("user passwd is ", scusereg.Passwd)
 	fmt.Println("user phone is ", scusereg.Phone)
 
-	time.Sleep(time.Second * 2)
-
 	//开始呼叫 102
 	packetcall := new(protocol.MsgPacket)
 	packetcall.Head.Id = common.CS_USER_CALL
 	csusercall := &wtproto.CSUserCall{
-		Caller:"101",
-		Becalled:"102"
+		Caller:   "101",
+		Becalled: "102",
 	}
 
 	//protobuf编码
@@ -76,16 +73,17 @@ func main() {
 		fmt.Println(common.ErrProtobuffMarshal.Error())
 		return
 	}
-	packet.Head.Len = (uint16)(len(pDatacall))
-	packet.Body.Data = pDatacall
-	cs.Send(packet)
-	callrsp, err := cs.Recv()
+	packetcall.Head.Len = (uint16)(len(pDatacall))
+	packetcall.Body.Data = pDatacall
+	cs.Send(packetcall)
+
+	callrspt, err := cs.Recv()
 	if err != nil {
 		fmt.Println("receive error")
 		return
 	}
-	
 
+	callrsp := callrspt.(*protocol.MsgPacket)
 	scusercall := &wtproto.SCUserCall{}
 
 	error2 = proto.Unmarshal(callrsp.Body.Data, scusercall)
@@ -100,7 +98,6 @@ func main() {
 		return
 	}
 
-	
-
+	fmt.Println("callrsp.Head.Id is ", callrsp.Head.Id)
 	cs.Close()
 }

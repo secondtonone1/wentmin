@@ -237,7 +237,7 @@ func (wt *WtServer) OnCheckAlive() {
 			return
 		case <-t1.C:
 			fmt.Println("timer tick now")
-			logs.Debug("timer tick now")
+			//logs.Debug("timer tick now")
 			wt.ClearDeadSession()
 			t1.Reset(10 * time.Second)
 			continue

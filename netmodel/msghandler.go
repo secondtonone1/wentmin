@@ -35,7 +35,7 @@ func (mh *MsgHandlerImpl) HandleMsgPacket(param interface{}, se interface{}) err
 		return common.ErrTypeAssertain
 	}
 	fmt.Printf("begin to handle msg id %d \n", msgpacket.Head.Id)
-	logs.Debug("begin to handle msg id %d \n", msgpacket.Head.Id)
+	//logs.Debug("begin to handle msg id %d \n", msgpacket.Head.Id)
 	if callback, ok = mh.cbfuncs[msgpacket.Head.Id]; !ok {
 		//不存在
 		return common.ErrMsgHandlerReg

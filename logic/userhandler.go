@@ -18,8 +18,6 @@ func init() {
 }
 
 func UserReg(session *netmodel.Session, msgpkg *protocol.MsgPacket) error {
-	//fmt.Printf("socket id [%d], receive userreg msg \n", session.GetSocketId())
-	//logs.Debug("socket id [%d], receive userreg msg \n", session.GetSocketId())
 	userreg := &wtproto.CSUserReg{}
 	err := proto.Unmarshal(msgpkg.Body.Data, userreg)
 	if err != nil {
@@ -29,9 +27,6 @@ func UserReg(session *netmodel.Session, msgpkg *protocol.MsgPacket) error {
 
 	fmt.Println("user account id is ", userreg.Accountid)
 	fmt.Println("user passwd is ", userreg.Passwd)
-	logs.Debug("user account id is ", userreg.Accountid)
-	logs.Debug("user passwd is ", userreg.Passwd)
-	logs.Debug("user phone is ", userreg.Phone)
 	fmt.Println("user phone is ", userreg.Phone)
 	ud := &UserData{AccountId: userreg.Accountid, Passwd: userreg.Passwd,
 		Phone: userreg.Phone, Session: session}
@@ -64,8 +59,7 @@ func UserReg(session *netmodel.Session, msgpkg *protocol.MsgPacket) error {
 }
 
 func UserCall(session *netmodel.Session, msgpkg *protocol.MsgPacket) error {
-	//fmt.Printf("socket id [%d], receive UserCall msg \n", session.GetSocketId())
-	//logs.Debug("socket id [%d], receive UserCall msg \n", session.GetSocketId())
+
 	uc := &wtproto.CSUserCall{}
 	err := proto.Unmarshal(msgpkg.Body.Data, uc)
 	if err != nil {
@@ -73,37 +67,48 @@ func UserCall(session *netmodel.Session, msgpkg *protocol.MsgPacket) error {
 		return err
 	}
 
-	logs.Debug("caller is ", uc.Caller)
-	logs.Debug("becalled is ", uc.Becalled)
+	fmt.Println("caller is ", uc.Caller)
+	fmt.Println("becalled is ", uc.Becalled)
 
-	scusercall := &wtproto.SCUserCall{}
-	defer func() {
+	ud, err := UserMgrInst.GetUser(uc.Becalled)
+	//user account id 没找到
+	if err != nil {
+		fmt.Printf("user not found %s\n", uc.Becalled)
+		scusercall := &wtproto.SCUserCall{}
+		scusercall.Errid = common.RSP_USER_NOT_FOUND
 		msgrsp := &protocol.MsgPacket{}
 		msgrsp.Head.Id = common.SC_USER_CALL
 		msgrsp.Body.Data, _ = proto.Marshal(scusercall)
 		msgrsp.Head.Len = uint16(len(msgrsp.Body.Data))
-	}()
-
-	//account id 不准确
-	ud, err := UserMgrInst.GetUser(uc.Becalled)
-	if err != nil {
-		logs.Debug("user not found %s", ud.AccountId)
-		scusercall.Errid = common.RSP_USER_NOT_FOUND
+		netmodel.PostMsgOut(session, msgrsp)
 		return nil
 	}
 
 	//判断对方是否在线
 	if !ud.IsOnline() {
-		logs.Debug("user [%s] not online ", ud.AccountId)
+		//logs.Debug("user [%s] not online ", ud.AccountId)
+		logs.Debug("user [%s] not online ", uc.Becalled)
+		scusercall := &wtproto.SCUserCall{}
 		scusercall.Errid = common.RSP_USER_NOT_ONLINE
 		scusercall.Phone = ud.Phone
+		msgrsp := &protocol.MsgPacket{}
+		msgrsp.Head.Id = common.SC_USER_CALL
+		msgrsp.Body.Data, _ = proto.Marshal(scusercall)
+		msgrsp.Head.Len = uint16(len(msgrsp.Body.Data))
+		netmodel.PostMsgOut(session, msgrsp)
 		return nil
 	}
 
+	scusercall := &wtproto.SCUserCall{}
 	scusercall.Errid = common.RSP_SUCCESS
 	scusercall.Phone = ud.Phone
 	scusercall.Caller = uc.Caller
 	scusercall.Becalled = uc.Becalled
+	msgrsp := &protocol.MsgPacket{}
+	msgrsp.Head.Id = common.SC_USER_CALL
+	msgrsp.Body.Data, _ = proto.Marshal(scusercall)
+	msgrsp.Head.Len = uint16(len(msgrsp.Body.Data))
+	netmodel.PostMsgOut(session, msgrsp)
 
 	return nil
 }

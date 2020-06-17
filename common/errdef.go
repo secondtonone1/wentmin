@@ -4,7 +4,7 @@ import "errors"
 
 //errorid 回复码
 const (
-	RSP_SUCCESS         = 1
+	RSP_SUCCESS         = 0
 	RSP_USER_NOT_FOUND  = 2
 	RSP_USER_NOT_ONLINE = 3
 )

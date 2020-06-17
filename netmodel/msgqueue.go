@@ -80,9 +80,7 @@ func (mq *MsgQueue) PutCloseMsgInQue(session *Session) error {
 	pkg.Body.Data = []byte{}
 	msgs := &MsgSession{session, pkg}
 	PacketChan <- msgs
-	fmt.Printf("close msg has been post into msgqueue \n, socketid is %d, oldsocketid is %d\n",
-		session.SocketId, session.LastSocket)
-	logs.Debug("msg queue has been closed")
+	//logs.Debug("PutCloseMsgInQue")
 	return nil
 }
 
