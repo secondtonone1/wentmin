@@ -9,10 +9,13 @@ import (
 	_ "wentmin/logic"
 	"wentmin/netmodel"
 
+	"wentmin/components"
+
 	"github.com/astaxie/beego/logs"
 )
 
 func main() {
+	components.InitTcpCfg()
 	//logs.Debug("server port is %d", components.ServerPort)
 	wt, err := netmodel.NewTcpServer()
 	if err != nil {

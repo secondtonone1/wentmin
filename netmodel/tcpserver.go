@@ -25,10 +25,12 @@ func init() {
 }
 func NewTcpServer() (*WtServer, error) {
 	address := "0.0.0.0:" + strconv.Itoa(components.ServerPort)
+	fmt.Println("address ", address)
 	listenert, err := net.Listen("tcp", address)
 	if err != nil {
 		fmt.Println("listen failed !!!")
 		logs.Debug("listen failed !!!")
+		fmt.Println(err.Error())
 		return nil, common.ErrListenFailed
 	}
 

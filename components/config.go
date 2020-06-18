@@ -16,13 +16,17 @@ var MaxMsgQueNum int = 1
 var OutputQueNum int = 2
 var OutputQueLen int = 2048
 var MaxMsgId uint16 = 9999
+var WebPort = 9527
 
 func init() {
-	BConfig, err := config.NewConfig("ini", "config/server.conf")
+	var err error
+	BConfig, err = config.NewConfig("ini", "config/server.conf")
 	if err != nil {
 		panic("config init error")
 	}
+}
 
+func InitTcpCfg() {
 	maxlines, lerr := BConfig.Int64("log::maxlines")
 	if lerr != nil {
 		maxlines = 1000
@@ -87,4 +91,13 @@ func init() {
 
 	MaxMsgId = uint16(msgid)
 
+}
+
+func InitWebCfg() {
+	var err error
+	WebPort, err = BConfig.Int("server::webport")
+	if err != nil {
+		fmt.Println("server server::webport read failed ")
+		return
+	}
 }
