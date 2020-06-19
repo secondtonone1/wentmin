@@ -43,7 +43,16 @@ var svrConnHandler websocket.Handler = func(conn *websocket.Conn) {
 */
 var svrConnHandler websocket.Handler = func(ws *websocket.Conn) {
 	var err error
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Println("web socket logic goroutine recover from panic")
+		}
 
+		//处理断线逻辑
+		WebLogicLock.Lock()
+		defer WebLogicLock.Unlock()
+		UserMgrInst.OnOffline(ws)
+	}()
 	for {
 
 		var reply string
@@ -58,6 +67,7 @@ var svrConnHandler websocket.Handler = func(ws *websocket.Conn) {
 
 		}
 
+		fmt.Println("receive msg is ", reply)
 		jsonMsg := &jsonproto.JsonMsg{}
 
 		err = json.Unmarshal([]byte(reply), jsonMsg)

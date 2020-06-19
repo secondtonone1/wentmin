@@ -9,11 +9,13 @@ import (
 )
 
 type WebServer struct {
+	webserver *http.Server
 }
 
 func (wb *WebServer) ListenAndServe() error {
 	address := "0.0.0.0:" + strconv.Itoa(components.WebPort)
-	err := http.ListenAndServe(address, nil)
+	wb.webserver = &http.Server{Addr: address}
+	err := wb.webserver.ListenAndServe()
 	return err
 }
 
@@ -24,6 +26,10 @@ func (wb *WebServer) Start() {
 		fmt.Println(config.ErrWebListenFailed.Error())
 		return
 	}
+}
+
+func (wb *WebServer) Stop() {
+	wb.webserver.Shutdown(nil)
 }
 
 func NewWebServer() *WebServer {

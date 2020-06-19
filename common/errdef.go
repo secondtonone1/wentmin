@@ -52,4 +52,6 @@ var (
 	ErrDBHandlerExit       = errors.New("DBHandler exit success")
 	ErrLogInit             = errors.New("Log Init Failed!")
 	ErrMsgIDNotReg         = errors.New("Msgid not reg")
+	ErrJsonUnMarshal       = errors.New("Json unmarshal failed ")
+	ErrAccountNotFound     = errors.New("Account not found !!")
 )

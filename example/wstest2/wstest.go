@@ -57,22 +57,7 @@ func clientConnHandler(conn *websocket.Conn) {
 
 		fmt.Println("reg rsp  is ", string(request))
 
-		//呼叫102
-		callMsg := &jsonproto.CSUserCall{}
-		callMsg.Caller = "101"
-		callMsg.BeCalled = "102"
-
-		jsMsg := &jsonproto.JsonMsg{}
-		jsMsg.MsgId = common.WEB_CS_USER_CALL
-		jsmal, _ := json.Marshal(callMsg)
-		jsMsg.MsgData = string(jsmal)
-
-		jsmal, _ = json.Marshal(jsMsg)
-		fmt.Println("send data is ", string(jsmal))
-		_, err = conn.Write(jsmal)
-
 		request = make([]byte, 1280)
-
 		readLen, err = conn.Read(request)
 		if checkErr(err, "Read") {
 			gCondition.Signal()
@@ -96,11 +81,39 @@ func clientConnHandler(conn *websocket.Conn) {
 		}
 		fmt.Println("receive notify jsondata msg is ", jsonmsg.MsgData)
 		jsondata := []byte(jsonmsg.MsgData)
-		becallss := &jsonproto.SCUserCall{}
-		_ = json.Unmarshal(jsondata, becallss)
-		fmt.Println("becall is ", becallss.BeCalled)
-		fmt.Println("caller is ", becallss.Caller)
-		fmt.Println("errorid is ", becallss.ErrorId)
+		becall := &jsonproto.SCNotifyBeCall{}
+		_ = json.Unmarshal(jsondata, becall)
+		fmt.Println("becall is ", becall.BeCalled)
+		fmt.Println("caller is ", becall.Caller)
+
+		//同意接通
+		jsonmsg = &jsonproto.JsonMsg{}
+		jsonmsg.MsgId = common.WEB_REPLY_BECALL
+		becallr := &jsonproto.CSNotifyBeCall{}
+		becallr.BeCalled = becall.BeCalled
+		becallr.Caller = becall.Caller
+		becallr.Agree = true
+		jstmp, _ := json.Marshal(becallr)
+		jsonmsg.MsgData = string(jstmp)
+		jstmp, _ = json.Marshal(jsonmsg)
+		conn.Write(jstmp)
+
+		request = make([]byte, 1280)
+		readLen, err = conn.Read(request)
+		if checkErr(err, "Read") {
+			gCondition.Signal()
+			break
+		}
+
+		//socket被关闭了
+		if readLen == 0 {
+			fmt.Println("Server connection close!")
+
+			//条件变量同步通知
+			gCondition.Signal()
+			break
+		}
+
 		//条件变量同步通知
 		gCondition.Signal()
 		break
@@ -117,9 +130,9 @@ func main() {
 	gCondition = sync.NewCond(&gLocker)
 
 	regMsg := &jsonproto.CSUserReg{}
-	regMsg.AccountId = "101"
-	regMsg.Passwd = "pwd101"
-	regMsg.Phone = "18301152008"
+	regMsg.AccountId = "102"
+	regMsg.Passwd = "pwd102"
+	regMsg.Phone = "112898988"
 
 	jsMsg := &jsonproto.JsonMsg{}
 	jsMsg.MsgId = common.WEB_CS_USER_REG

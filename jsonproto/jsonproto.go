@@ -12,8 +12,32 @@ type CSUserReg struct {
 }
 
 type SCUserReg struct {
-	ErrorId   string `json:"errorid"`
+	ErrorId   int    `json:"errorid"`
 	AccountId string `json:"accountid"`
 	Passwd    string `json:"passwd"`
 	Phone     string `json:"phone"`
+}
+
+type CSUserCall struct {
+	Caller   string `json:"caller"`
+	BeCalled string `json:"becalled"`
+}
+
+type SCUserCall struct {
+	ErrorId  int    `json:"errorid"`
+	Caller   string `json:"caller"`
+	BeCalled string `json:"becalled"`
+	Phone    string `json:"phone"`
+	Token    string `json:"token"`
+}
+
+type SCNotifyBeCall struct {
+	Caller   string `json:"caller"`
+	BeCalled string `json:"becalled"`
+}
+
+type CSNotifyBeCall struct {
+	Caller   string `json:"caller"`
+	BeCalled string `json:"becalled"`
+	Agree    bool   `json:"agree"`
 }
