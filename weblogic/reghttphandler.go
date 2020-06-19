@@ -1,5 +1,9 @@
 package weblogic
 
+import (
+	"net/http"
+)
+
 func RegHttpHandlers() {
-	RegUsrInfo("/info")
+	http.HandleFunc("/httptest", UsrInfoReq)
 }

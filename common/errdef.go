@@ -51,4 +51,5 @@ var (
 	ErrAllSaveRoutineExit  = errors.New("All Save Routines exit")
 	ErrDBHandlerExit       = errors.New("DBHandler exit success")
 	ErrLogInit             = errors.New("Log Init Failed!")
+	ErrMsgIDNotReg         = errors.New("Msgid not reg")
 )

@@ -15,3 +15,8 @@ const (
 	CS_TERMINAL_CHAT = 1008 //客户端终止chat
 	SC_TERMINAL_CHAT = 1009 //服务器回复终止chat
 )
+
+const (
+	WEB_CS_USER_CALL = 2001 //用户注册身份信息
+	WEB_SC_USER_CALL = 2002 //服务器回复注册结果
+)

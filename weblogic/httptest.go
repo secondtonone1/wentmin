@@ -24,8 +24,3 @@ func UsrInfoReq(w http.ResponseWriter, r *http.Request) {
 	}
 
 }
-
-func RegUsrInfo(pattern string) {
-
-	http.HandleFunc(pattern, UsrInfoReq)
-}
