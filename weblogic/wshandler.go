@@ -205,6 +205,10 @@ func UserCallReply(conn *websocket.Conn, msgdata string) error {
 	tokenstr := fmt.Sprintf("%x", md5.Sum([]byte(cscall.Caller+cscall.BeCalled+timestr)))
 	fmt.Println("token str is ", tokenstr)
 
+	//将两个人放入房间
+	chatroot := &ChatRoom{Token: tokenstr, Caller: cscall.Caller, Becalled: cscall.BeCalled}
+	ChatMgrInst.AddRoom(chatroot)
+
 	sccall := &jsonproto.SCUserCall{}
 	sccall.Caller = cscall.Caller
 	sccall.BeCalled = cscall.BeCalled
