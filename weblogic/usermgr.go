@@ -60,7 +60,7 @@ func AliveCheck() {
 		case <-WebsocketClose:
 			return
 		case <-t1.C:
-			fmt.Println("timer tick now")
+			//fmt.Println("timer tick now")
 			//UserMgrInst.ClearDeadSession()
 			t1.Reset(10 * time.Second)
 			continue
