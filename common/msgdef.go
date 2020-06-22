@@ -18,11 +18,14 @@ const (
 )
 
 const (
-	WEB_HEART_BEAT    = 9    //web心跳，后期可以扩充
-	WEB_CS_USER_REG   = 2001 //用户注册身份信息
-	WEB_SC_USER_REG   = 2002 //服务器回复注册结果
-	WEB_CS_USER_CALL  = 2003 //用户呼叫请求
-	WEB_SC_USER_CALL  = 2004 //服务器回复呼叫结果
-	WEB_NOTIFY_BECALL = 2005 //服务器通知被呼叫方有通话请求
-	WEB_REPLY_BECALL  = 2006 //客户端回复服务器，是否同意接听
+	WEB_HEART_BEAT         = 9    //web心跳，后期可以扩充
+	WEB_CS_USER_REG        = 2001 //用户注册身份信息
+	WEB_SC_USER_REG        = 2002 //服务器回复注册结果
+	WEB_CS_USER_CALL       = 2003 //用户呼叫请求
+	WEB_SC_USER_CALL       = 2004 //服务器回复呼叫结果
+	WEB_NOTIFY_BECALL      = 2005 //服务器通知被呼叫方有通话请求
+	WEB_REPLY_BECALL       = 2006 //客户端回复服务器，是否同意接听
+	WEB_NOTIFY_CALLRING    = 2007 //通知主叫人唤起响铃
+	WEB_CS_TERMINAL_CALL   = 2008 //主叫方终止呼叫
+	WEB_SC_TERMINAL_BECALL = 2009 //服务器通知被叫方终端
 )

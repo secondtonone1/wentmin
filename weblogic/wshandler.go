@@ -20,6 +20,7 @@ func init() {
 	RegMsgHandler(common.WEB_CS_USER_REG, UserReg)
 	RegMsgHandler(common.WEB_CS_USER_CALL, UserCall)
 	RegMsgHandler(common.WEB_REPLY_BECALL, UserCallReply)
+	RegMsgHandler(common.WEB_CS_TERMINAL_CALL, UserTerminalCall)
 }
 
 func RegMsgHandler(msgid int, handler func(*websocket.Conn, string) error) {
@@ -132,11 +133,42 @@ func UserCall(conn *websocket.Conn, msgdata string) error {
 		return nil
 	}
 
+	//被呼叫人在线，回复主叫人唤起响铃
+	callring := &jsonproto.SCNotifyCallRing{}
+	callring.Caller = cscall.Caller
+	callring.BeCalled = cscall.BeCalled
+
+	timestr := time.Now().Format("2006-01-02 15:04:05")
+	tokenstr := fmt.Sprintf("%x", md5.Sum([]byte(cscall.Caller+cscall.BeCalled+timestr)))
+	fmt.Println("token str is ", tokenstr)
+	callring.Token = tokenstr
+	ringms, _ := json.Marshal(callring)
+	ringmsg := &jsonproto.JsonMsg{}
+	ringmsg.MsgId = common.WEB_NOTIFY_CALLRING
+	ringmsg.MsgData = string(ringms)
+	ringmsgs, _ := json.Marshal(ringmsg)
+
+	fmt.Println("send call ring msg is ", string(ringmsgs))
+	ringnw, err := conn.Write(ringmsgs)
+	if err != nil {
+		fmt.Println("write failed")
+		return common.ErrWebSocketClosed
+	}
+	if ringnw == 0 {
+		fmt.Println("peer connection closed ")
+		return common.ErrWebSocketClosed
+	}
+
+	//将两个人放入房间
+	chatroot := &ChatRoom{Token: tokenstr, Caller: cscall.Caller, Becalled: cscall.BeCalled}
+	ChatMgrInst.AddRoom(chatroot)
+
 	//被呼叫人在线，通知被呼叫人
 
 	notifybecall := &jsonproto.SCNotifyBeCall{}
 	notifybecall.Caller = cscall.Caller
 	notifybecall.BeCalled = cscall.BeCalled
+	notifybecall.Token = tokenstr
 
 	notifyms, _ := json.Marshal(notifybecall)
 	jmsg := &jsonproto.JsonMsg{}
@@ -201,19 +233,18 @@ func UserCallReply(conn *websocket.Conn, msgdata string) error {
 		return nil
 	}
 
-	timestr := time.Now().Format("2006-01-02 15:04:05")
-	tokenstr := fmt.Sprintf("%x", md5.Sum([]byte(cscall.Caller+cscall.BeCalled+timestr)))
-	fmt.Println("token str is ", tokenstr)
-
-	//将两个人放入房间
-	chatroot := &ChatRoom{Token: tokenstr, Caller: cscall.Caller, Becalled: cscall.BeCalled}
-	ChatMgrInst.AddRoom(chatroot)
+	//判断房间信息是否存在，可能主叫方此时已经挂断
+	room := ChatMgrInst.GetRoom(cscall.Token)
+	if room == nil {
+		fmt.Println("peer terminal call")
+		return nil
+	}
 
 	sccall := &jsonproto.SCUserCall{}
 	sccall.Caller = cscall.Caller
 	sccall.BeCalled = cscall.BeCalled
 	sccall.ErrorId = common.RSP_SUCCESS
-	sccall.Token = tokenstr
+	sccall.Token = cscall.Token
 	sccallms, _ := json.Marshal(sccall)
 	jmsg := &jsonproto.JsonMsg{}
 	jmsg.MsgId = common.WEB_SC_USER_CALL
@@ -230,4 +261,62 @@ func UserCallReply(conn *websocket.Conn, msgdata string) error {
 	}
 	return nil
 
+}
+
+func UserTerminalCall(conn *websocket.Conn, msgdata string) error {
+	fmt.Println("receive user terminal call  , msgdata is ", string(msgdata))
+	cstcall := &jsonproto.CSTerminalCall{}
+	err := json.Unmarshal([]byte(msgdata), cstcall)
+	if err != nil {
+		fmt.Println("json unmarshal failed")
+		return common.ErrJsonUnMarshal
+	}
+
+	fmt.Println("caller is ", cstcall.Caller)
+	fmt.Println("becalled is ", cstcall.BeCalled)
+	fmt.Println("token is ", cstcall.Token)
+
+	//清除房间信息，
+	room := ChatMgrInst.GetRoom(cstcall.Token)
+	if room == nil {
+		fmt.Println("not found room data, may be dismissed")
+	} else {
+		ChatMgrInst.DelRoom(cstcall.Token)
+	}
+
+	becaller, err := UserMgrInst.GetUser(cstcall.BeCalled)
+	if err != nil {
+		fmt.Println("not found becaller ")
+		return nil
+	}
+
+	if !becaller.IsOnline() {
+		fmt.Println("becaller is not online")
+		return nil
+	}
+
+	becallConn := becaller.GetConn()
+
+	//同时发送消息推送给被呼人挂断
+	scbecall := &jsonproto.SCTerminalBeCall{}
+	scbecall.BeCalled = cstcall.BeCalled
+	scbecall.Caller = cstcall.Caller
+	scbecall.Token = cstcall.Token
+
+	scbecallms, _ := json.Marshal(scbecall)
+
+	jmsg := &jsonproto.JsonMsg{}
+	jmsg.MsgId = common.WEB_SC_TERMINAL_BECALL
+	jmsg.MsgData = string(scbecallms)
+	jmsgms, _ := json.Marshal(jmsg)
+	nw, err := becallConn.Write(jmsgms)
+	if err != nil {
+		fmt.Println("write failed")
+		return common.ErrWebSocketClosed
+	}
+	if nw == 0 {
+		fmt.Println("peer connection closed ")
+		return common.ErrWebSocketClosed
+	}
+	return nil
 }
