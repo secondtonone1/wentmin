@@ -24,9 +24,7 @@ func init() {
 	if err != nil {
 		panic("config init error")
 	}
-}
 
-func InitTcpCfg() {
 	maxlines, lerr := BConfig.Int64("log::maxlines")
 	if lerr != nil {
 		maxlines = 1000
@@ -45,7 +43,10 @@ func InitTcpCfg() {
 	}
 	logs.SetLogger(logs.AdapterFile, string(confStr))
 	logs.SetLogFuncCall(true)
+}
 
+func InitTcpCfg() {
+	var err error
 	ServerPort, err = BConfig.Int("server::port")
 	if err != nil {
 		fmt.Println("server port error is ", err)
