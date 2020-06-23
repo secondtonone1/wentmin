@@ -19,8 +19,9 @@ type SCUserReg struct {
 }
 
 type CSUserCall struct {
-	Caller   string `json:"caller"`
-	BeCalled string `json:"becalled"`
+	Caller      string `json:"caller"`
+	BeCalled    string `json:"becalled"`
+	IsAudioOnly bool   `json:"isaudioonly"`
 }
 
 type SCUserCall struct {
@@ -32,9 +33,10 @@ type SCUserCall struct {
 }
 
 type SCNotifyBeCall struct {
-	Caller   string `json:"caller"`
-	BeCalled string `json:"becalled"`
-	Token    string `json:"token"`
+	Caller      string `json:"caller"`
+	BeCalled    string `json:"becalled"`
+	Token       string `json:"token"`
+	IsAudioOnly bool   `json:"isaudioonly"`
 }
 
 type CSNotifyBeCall struct {

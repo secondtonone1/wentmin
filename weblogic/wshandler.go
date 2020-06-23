@@ -86,6 +86,7 @@ func UserCall(conn *websocket.Conn, msgdata string) error {
 
 	fmt.Println("caller is ", cscall.Caller)
 	fmt.Println("becalled is ", cscall.BeCalled)
+	fmt.Println("isaudioonly is ", cscall.IsAudioOnly)
 	becall, err := UserMgrInst.GetUser(cscall.BeCalled)
 	//没找到用户
 	if err != nil {
@@ -169,6 +170,7 @@ func UserCall(conn *websocket.Conn, msgdata string) error {
 	notifybecall.Caller = cscall.Caller
 	notifybecall.BeCalled = cscall.BeCalled
 	notifybecall.Token = tokenstr
+	notifybecall.IsAudioOnly = cscall.IsAudioOnly
 
 	notifyms, _ := json.Marshal(notifybecall)
 	jmsg := &jsonproto.JsonMsg{}
