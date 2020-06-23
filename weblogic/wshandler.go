@@ -203,6 +203,7 @@ func UserCallReply(conn *websocket.Conn, msgdata string) error {
 	fmt.Println("caller is ", cscall.Caller)
 	fmt.Println("becalled is ", cscall.BeCalled)
 	fmt.Println("agree is ", cscall.Agree)
+	fmt.Println("token is ", cscall.Token)
 
 	usrcaller, err := UserMgrInst.GetUser(cscall.Caller)
 	if err != nil {
@@ -214,6 +215,8 @@ func UserCallReply(conn *websocket.Conn, msgdata string) error {
 	//被叫方不同意接听
 	if !cscall.Agree {
 
+		//将用户从房间中
+		ChatMgrInst.DelRoom(cscall.Token)
 		sccall := &jsonproto.SCUserCall{}
 		sccall.Caller = cscall.Caller
 		sccall.BeCalled = cscall.BeCalled
