@@ -21,7 +21,7 @@ func CreateClient(id int) {
 
 	packet := new(protocol.MsgPacket)
 	packet.Head.Id = common.USER_REG_CS
-	csusereg := &wtproto.CSUserReg{
+	csusereg := &wtproto.CSUserLogin{
 		Accountid: accountid,
 		Passwd:    "pawd" + accountid,
 	}
@@ -44,7 +44,7 @@ func CreateClient(id int) {
 	datarsp := packetrsp.(*protocol.MsgPacket)
 	fmt.Println("packet id is", datarsp.Head.Id)
 	fmt.Println("packet len is", datarsp.Head.Len)
-	scusereg := &wtproto.SCUserReg{}
+	scusereg := &wtproto.SCUserLogin{}
 
 	error2 := proto.Unmarshal(datarsp.Body.Data, scusereg)
 	if error2 != nil {
@@ -58,9 +58,7 @@ func CreateClient(id int) {
 	}
 
 	fmt.Println("user reg success ")
-	fmt.Println("user account is ", scusereg.Accountid)
-	fmt.Println("user passwd is ", scusereg.Passwd)
-	fmt.Println("user phone is ", scusereg.Phone)
+	fmt.Println("user token is ", scusereg.Token)
 	cs.Close()
 }
 

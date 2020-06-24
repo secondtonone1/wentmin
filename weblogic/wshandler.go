@@ -4,6 +4,8 @@ import (
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
+	"math/rand"
+	"strconv"
 	"sync"
 	"time"
 	"wentmin/common"
@@ -39,7 +41,7 @@ func HandleWebMsg(conn *websocket.Conn, msgid int, msgdata string) error {
 
 func UserReg(conn *websocket.Conn, msgdata string) error {
 	fmt.Println("receive user reg req , msgdata is ", string(msgdata))
-	csreg := &jsonproto.CSUserReg{}
+	csreg := &jsonproto.CSUserLogin{}
 	err := json.Unmarshal([]byte(msgdata), csreg)
 	if err != nil {
 		fmt.Println("json unmarshal failed")
@@ -53,11 +55,13 @@ func UserReg(conn *websocket.Conn, msgdata string) error {
 	ud.Phone = csreg.Phone
 	UserMgrInst.AddUser(ud)
 
-	screg := &jsonproto.SCUserReg{}
-	screg.AccountId = csreg.AccountId
+	screg := &jsonproto.SCUserLogin{}
 	screg.ErrorId = common.RSP_SUCCESS
-	screg.Passwd = csreg.Passwd
-	screg.Phone = csreg.Phone
+	timestr := time.Now().Format("20060102150405")
+	//将时间戳设置成种子数
+	rand.Seed(time.Now().UnixNano())
+	randres := rand.Intn(100)
+	screg.Token = csreg.AccountId + "." + timestr + "." + strconv.Itoa(randres)
 
 	jsreg, _ := json.Marshal(screg)
 	jsmsg := jsonproto.JsonMsg{MsgId: common.WEB_SC_USER_REG, MsgData: string(jsreg)}
@@ -140,9 +144,9 @@ func UserCall(conn *websocket.Conn, msgdata string) error {
 	callring.BeCalled = cscall.BeCalled
 
 	timestr := time.Now().Format("2006-01-02 15:04:05")
-	tokenstr := fmt.Sprintf("%x", md5.Sum([]byte(cscall.Caller+cscall.BeCalled+timestr)))
-	fmt.Println("token str is ", tokenstr)
-	callring.Token = tokenstr
+	rommidstr := fmt.Sprintf("%x", md5.Sum([]byte(cscall.Caller+cscall.BeCalled+timestr)))
+	fmt.Println("roomid str is ", rommidstr)
+	callring.Roomid = rommidstr
 	ringms, _ := json.Marshal(callring)
 	ringmsg := &jsonproto.JsonMsg{}
 	ringmsg.MsgId = common.WEB_NOTIFY_CALLRING
@@ -161,7 +165,7 @@ func UserCall(conn *websocket.Conn, msgdata string) error {
 	}
 
 	//将两个人放入房间
-	chatroot := &ChatRoom{Token: tokenstr, Caller: cscall.Caller, Becalled: cscall.BeCalled}
+	chatroot := &ChatRoom{Roomid: rommidstr, Caller: cscall.Caller, Becalled: cscall.BeCalled}
 	ChatMgrInst.AddRoom(chatroot)
 
 	//被呼叫人在线，通知被呼叫人
@@ -169,7 +173,7 @@ func UserCall(conn *websocket.Conn, msgdata string) error {
 	notifybecall := &jsonproto.SCNotifyBeCall{}
 	notifybecall.Caller = cscall.Caller
 	notifybecall.BeCalled = cscall.BeCalled
-	notifybecall.Token = tokenstr
+	notifybecall.Roomid = rommidstr
 	notifybecall.IsAudioOnly = cscall.IsAudioOnly
 
 	notifyms, _ := json.Marshal(notifybecall)
@@ -203,7 +207,7 @@ func UserCallReply(conn *websocket.Conn, msgdata string) error {
 	fmt.Println("caller is ", cscall.Caller)
 	fmt.Println("becalled is ", cscall.BeCalled)
 	fmt.Println("agree is ", cscall.Agree)
-	fmt.Println("token is ", cscall.Token)
+	fmt.Println("roomid is ", cscall.Roomid)
 
 	usrcaller, err := UserMgrInst.GetUser(cscall.Caller)
 	if err != nil {
@@ -216,7 +220,7 @@ func UserCallReply(conn *websocket.Conn, msgdata string) error {
 	if !cscall.Agree {
 
 		//将用户从房间中
-		ChatMgrInst.DelRoom(cscall.Token)
+		ChatMgrInst.DelRoom(cscall.Roomid)
 		sccall := &jsonproto.SCUserCall{}
 		sccall.Caller = cscall.Caller
 		sccall.BeCalled = cscall.BeCalled
@@ -239,7 +243,7 @@ func UserCallReply(conn *websocket.Conn, msgdata string) error {
 	}
 
 	//判断房间信息是否存在，可能主叫方此时已经挂断
-	room := ChatMgrInst.GetRoom(cscall.Token)
+	room := ChatMgrInst.GetRoom(cscall.Roomid)
 	if room == nil {
 		fmt.Println("peer terminal call")
 		return nil
@@ -249,7 +253,7 @@ func UserCallReply(conn *websocket.Conn, msgdata string) error {
 	sccall.Caller = cscall.Caller
 	sccall.BeCalled = cscall.BeCalled
 	sccall.ErrorId = common.RSP_SUCCESS
-	sccall.Token = cscall.Token
+	sccall.Roomid = cscall.Roomid
 	sccallms, _ := json.Marshal(sccall)
 	jmsg := &jsonproto.JsonMsg{}
 	jmsg.MsgId = common.WEB_SC_USER_CALL
@@ -279,14 +283,14 @@ func UserTerminalCall(conn *websocket.Conn, msgdata string) error {
 
 	fmt.Println("caller is ", cstcall.Caller)
 	fmt.Println("becalled is ", cstcall.BeCalled)
-	fmt.Println("token is ", cstcall.Token)
+	fmt.Println("roomid is ", cstcall.Roomid)
 
 	//清除房间信息，
-	room := ChatMgrInst.GetRoom(cstcall.Token)
+	room := ChatMgrInst.GetRoom(cstcall.Roomid)
 	if room == nil {
 		fmt.Println("not found room data, may be dismissed")
 	} else {
-		ChatMgrInst.DelRoom(cstcall.Token)
+		ChatMgrInst.DelRoom(cstcall.Roomid)
 	}
 
 	becaller, err := UserMgrInst.GetUser(cstcall.BeCalled)
@@ -306,7 +310,7 @@ func UserTerminalCall(conn *websocket.Conn, msgdata string) error {
 	scbecall := &jsonproto.SCTerminalBeCall{}
 	scbecall.BeCalled = cstcall.BeCalled
 	scbecall.Caller = cstcall.Caller
-	scbecall.Token = cstcall.Token
+	scbecall.Roomid = cstcall.Roomid
 
 	scbecallms, _ := json.Marshal(scbecall)
 

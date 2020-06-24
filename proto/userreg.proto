@@ -3,19 +3,17 @@ package wtproto;
 //protoc --gofast_out=. *.proto
 //protoc --go_out=. *.proto
 
-//用户注册请求
-message CSUserReg{
+//用户登录请求
+message CSUserLogin{
 	string accountid = 1;  //账号
     string passwd = 2;     //密码
     string phone  = 3;     //留备用电话
 }
 
-//用户注册回复
-message SCUserReg{
-    int32 errid = 1;
-	string accountid = 2;  //账号
-    string passwd = 3;     //密码
-    string phone = 4;      //留备用电话
+//用户登录回复
+message SCUserLogin{
+    int32  errid = 1;
+	string token = 2; 
 }
 
 //用户呼叫请求
@@ -49,14 +47,14 @@ message SCUserCall{
 message SCNotifyChat{
     string caller = 1 ;   //发起呼叫的人的账号
     string becalled = 2;  //被呼叫的人的账号
-    string token  = 3;    //用于通信的token
+    string roomid  = 3;    //用于通信的rommid
 }
 
 //客户端终止通话
 message CSTerminateChat {
     string caller = 1;    //发起呼叫的人的账号
     string becalled = 2;  //被呼叫的人的账号
-    string token = 3 ;    //用于通信的token
+    string roomid = 3 ;    //用于通信的rommid
 }
 
 //服务器回复终止通话
@@ -64,5 +62,5 @@ message SCTerminateChat {
     int32 errid = 1;
     string caller = 2;    //发起呼叫的人的账号
     string becalled = 3;  //被呼叫的人的账号
-    string token = 4 ;    //用于通信的token
+    string roomid = 4 ;    //用于通信的rommid
 }

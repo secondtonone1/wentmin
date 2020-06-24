@@ -1,7 +1,7 @@
 package weblogic
 
 type ChatRoom struct {
-	Token    string
+	Roomid   string
 	Caller   string
 	Becalled string
 }
@@ -13,15 +13,15 @@ type ChatMgr struct {
 var ChatMgrInst *ChatMgr
 
 func (cm *ChatMgr) AddRoom(cr *ChatRoom) {
-	cm.ChatRoomMap[cr.Token] = cr
+	cm.ChatRoomMap[cr.Roomid] = cr
 }
 
-func (cm *ChatMgr) DelRoom(token string) {
-	delete(cm.ChatRoomMap, token)
+func (cm *ChatMgr) DelRoom(roomid string) {
+	delete(cm.ChatRoomMap, roomid)
 }
 
-func (cm *ChatMgr) GetRoom(token string) *ChatRoom {
-	room, ok := cm.ChatRoomMap[token]
+func (cm *ChatMgr) GetRoom(roomid string) *ChatRoom {
+	room, ok := cm.ChatRoomMap[roomid]
 	if !ok {
 		return nil
 	}

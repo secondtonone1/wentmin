@@ -3,7 +3,9 @@ package logic
 import (
 	"crypto/md5"
 	"fmt"
+	"math/rand"
 	"protobuf/proto"
+	"strconv"
 	"time"
 	"wentmin/common"
 	"wentmin/netmodel"
@@ -15,15 +17,15 @@ import (
 
 func init() {
 	fmt.Println("reg user req")
-	netmodel.GetMsgHandlerIns().RegMsgHandler(common.USER_REG_CS, UserReg)
+	netmodel.GetMsgHandlerIns().RegMsgHandler(common.USER_REG_CS, UserLogin)
 	netmodel.GetMsgHandlerIns().RegMsgHandler(common.CS_USER_CALL, UserCall)
 	netmodel.GetMsgHandlerIns().RegMsgHandler(common.CS_NOTIFY_REPLY, BeCallReply)
 	netmodel.GetMsgHandlerIns().RegMsgHandler(common.CS_TERMINAL_CHAT, TerminateChat)
 }
 
-func UserReg(session *netmodel.Session, msgpkg *protocol.MsgPacket) error {
+func UserLogin(session *netmodel.Session, msgpkg *protocol.MsgPacket) error {
 	fmt.Println("receive user reg msg")
-	userreg := &wtproto.CSUserReg{}
+	userreg := &wtproto.CSUserLogin{}
 	err := proto.Unmarshal(msgpkg.Body.Data, userreg)
 	if err != nil {
 		fmt.Println("userreg proto unmarshal failed")
@@ -36,12 +38,14 @@ func UserReg(session *netmodel.Session, msgpkg *protocol.MsgPacket) error {
 	ud := &UserData{AccountId: userreg.Accountid, Passwd: userreg.Passwd,
 		Phone: userreg.Phone, Session: session}
 	UserMgrInst.AddUser(ud)
-	userregrsp := &wtproto.SCUserReg{}
+	userregrsp := &wtproto.SCUserLogin{}
 	userregrsp.Errid = common.RSP_SUCCESS
-	userregrsp.Passwd = userreg.Passwd
+	timestr := time.Now().Format("20060102150405")
+	//将时间戳设置成种子数
+	rand.Seed(time.Now().UnixNano())
+	randres := rand.Intn(100)
+	userregrsp.Token = userreg.Accountid + "." + timestr + "." + strconv.Itoa(randres)
 
-	userregrsp.Accountid = userreg.Accountid
-	userregrsp.Phone = userreg.Phone
 	pData, err := proto.Marshal(userregrsp)
 	if err != nil {
 		fmt.Println(common.ErrProtobuffMarshal.Error())
@@ -160,10 +164,10 @@ func BeCallReply(session *netmodel.Session, msgpkg *protocol.MsgPacket) error {
 	scnotify.Becalled = csreply.Becalled
 
 	timestr := time.Now().Format("2006-01-02 15:04:05")
-	tokenstr := fmt.Sprintf("%x", md5.Sum([]byte(csreply.Caller+csreply.Becalled+timestr)))
-	fmt.Println("token str is ", tokenstr)
-	//logs.Debug("token str is ", tokenstr)
-	scnotify.Token = tokenstr
+	rommidstr := fmt.Sprintf("%x", md5.Sum([]byte(csreply.Caller+csreply.Becalled+timestr)))
+	fmt.Println("roomid str is ", rommidstr)
+	//logs.Debug("roomid str is ", rommidstr)
+	scnotify.Roomid = rommidstr
 
 	notifyChat := &protocol.MsgPacket{}
 	notifyChat.Head.Id = common.SC_NOTIFY_CHAT
@@ -173,7 +177,7 @@ func BeCallReply(session *netmodel.Session, msgpkg *protocol.MsgPacket) error {
 	netmodel.PostMsgOut(ud.GetSession(), notifyChat)
 	netmodel.PostMsgOut(session, notifyChat)
 	cr := new(ChatRoom)
-	cr.Token = tokenstr
+	cr.Roomid = rommidstr
 	cr.Caller = csreply.Caller
 	cr.Becalled = csreply.Becalled
 	ChatMgrInst.AddRoom(cr)
@@ -188,12 +192,12 @@ func TerminateChat(session *netmodel.Session, msgpkg *protocol.MsgPacket) error 
 		return common.ErrProtobuffUnMarshal
 	}
 
-	ChatMgrInst.DelRoom(cstermchat.Token)
+	ChatMgrInst.DelRoom(cstermchat.Roomid)
 	sctermchat := &wtproto.SCTerminateChat{}
 	sctermchat.Errid = common.RSP_SUCCESS
 	sctermchat.Caller = cstermchat.Caller
 	sctermchat.Becalled = cstermchat.Becalled
-	sctermchat.Token = cstermchat.Token
+	sctermchat.Roomid = cstermchat.Roomid
 
 	sctermpkg := &protocol.MsgPacket{}
 	sctermpkg.Head.Id = common.SC_TERMINAL_CHAT

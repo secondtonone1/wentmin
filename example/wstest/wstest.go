@@ -15,8 +15,13 @@ import (
 var gLocker sync.Mutex    //全局锁
 var gCondition *sync.Cond //全局条件变量
 
+/*
 var origin = "http://81.68.86.146:9527/"
 var url = "ws://81.68.86.146:9527/wsmsg"
+*/
+
+var origin = "http://127.0.0.1:9527/"
+var url = "ws://127.0.0.1:9527/wsmsg"
 
 //错误处理函数
 func checkErr(err error, extra string) bool {
@@ -116,7 +121,7 @@ func main() {
 	gLocker.Lock()
 	gCondition = sync.NewCond(&gLocker)
 
-	regMsg := &jsonproto.CSUserReg{}
+	regMsg := &jsonproto.CSUserLogin{}
 	regMsg.AccountId = "101"
 	regMsg.Passwd = "pwd101"
 	regMsg.Phone = "18301152008"

@@ -129,7 +129,7 @@ func main() {
 	gLocker.Lock()
 	gCondition = sync.NewCond(&gLocker)
 
-	regMsg := &jsonproto.CSUserReg{}
+	regMsg := &jsonproto.CSUserLogin{}
 	regMsg.AccountId = "102"
 	regMsg.Passwd = "pwd102"
 	regMsg.Phone = "112898988"
