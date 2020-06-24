@@ -1,5 +1,5 @@
 ## 简介
-wentmin是基于wentby改造的轻量级tcp服务器，支持实时socket通信，后期会扩充websocket，http等协议。
+wentmin是基于wentby改造的轻量级tcp服务器，支持实时socket通信，websocket，http等协议。
 ## 项目结构
 ### common
 common包用来定义常用的变量和常量
@@ -19,10 +19,13 @@ msgqueue 消息队列， 目前配置一个，逻辑处理单线程更安全容�
 msghandler 消息处理函数模板，主要用来管理注册消息和回调函数
 tcpserver tcp逻辑处理，管理连接，心跳检测，断线处理。tcpserver用于网络协程，当所有协程退出后其才退出
 client 客户端封装
+webserver 支持http和websocket协议
 ### example
 example中定义了几个测试客户端，包括简单测试，loop测试，长连接压力测试等。
 ### proto
 协议定义在这里，主要是protobuf定义的proto和转化生成的pb文件
+### jsonproto
+json协议定义在该目录下，websocket用jsonproto通信
 ### protocol
 msgdef定义了消息结构
 /*
