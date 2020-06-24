@@ -164,10 +164,10 @@ func BeCallReply(session *netmodel.Session, msgpkg *protocol.MsgPacket) error {
 	scnotify.Becalled = csreply.Becalled
 
 	timestr := time.Now().Format("2006-01-02 15:04:05")
-	rommidstr := fmt.Sprintf("%x", md5.Sum([]byte(csreply.Caller+csreply.Becalled+timestr)))
-	fmt.Println("roomid str is ", rommidstr)
-	//logs.Debug("roomid str is ", rommidstr)
-	scnotify.Roomid = rommidstr
+	roomidstr := fmt.Sprintf("%x", md5.Sum([]byte(csreply.Caller+csreply.Becalled+timestr)))
+	fmt.Println("roomid str is ", roomidstr)
+	//logs.Debug("roomid str is ", roomidstr)
+	scnotify.Roomid = roomidstr
 
 	notifyChat := &protocol.MsgPacket{}
 	notifyChat.Head.Id = common.SC_NOTIFY_CHAT
@@ -177,7 +177,7 @@ func BeCallReply(session *netmodel.Session, msgpkg *protocol.MsgPacket) error {
 	netmodel.PostMsgOut(ud.GetSession(), notifyChat)
 	netmodel.PostMsgOut(session, notifyChat)
 	cr := new(ChatRoom)
-	cr.Roomid = rommidstr
+	cr.Roomid = roomidstr
 	cr.Caller = csreply.Caller
 	cr.Becalled = csreply.Becalled
 	ChatMgrInst.AddRoom(cr)

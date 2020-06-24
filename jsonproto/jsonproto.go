@@ -51,16 +51,18 @@ type SCNotifyCallRing struct {
 	Roomid   string `json:"roomid"`
 }
 
-//主叫方中止呼叫
+//一方挂断
 type CSTerminalCall struct {
 	Caller   string `json:"caller"`
 	BeCalled string `json:"becalled"`
 	Roomid   string `json:"roomid"`
+	Cancel   string `json:"cancel"`
 }
 
-//服务器通知被叫方挂断
+//服务器通知另一方挂断
 type SCTerminalBeCall struct {
 	Caller   string `json:"caller"`
 	BeCalled string `json:"becalled"`
 	Roomid   string `json:"roomid"`
+	Cancel   string `json:"cancel"`
 }

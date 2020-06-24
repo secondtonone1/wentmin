@@ -26,6 +26,6 @@ const (
 	WEB_NOTIFY_BECALL      = 2005 //服务器通知被呼叫方有通话请求
 	WEB_REPLY_BECALL       = 2006 //客户端回复服务器，是否同意接听
 	WEB_NOTIFY_CALLRING    = 2007 //通知主叫人唤起响铃
-	WEB_CS_TERMINAL_CALL   = 2008 //主叫方终止呼叫
-	WEB_SC_TERMINAL_BECALL = 2009 //服务器通知被叫方终端
+	WEB_CS_TERMINAL_CALL   = 2008 //一方终止呼叫
+	WEB_SC_TERMINAL_BECALL = 2009 //服务器通知另一方终止通话
 )

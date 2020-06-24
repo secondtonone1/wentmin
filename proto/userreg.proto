@@ -47,14 +47,14 @@ message SCUserCall{
 message SCNotifyChat{
     string caller = 1 ;   //发起呼叫的人的账号
     string becalled = 2;  //被呼叫的人的账号
-    string roomid  = 3;    //用于通信的rommid
+    string roomid  = 3;    //用于通信的roomid
 }
 
 //客户端终止通话
 message CSTerminateChat {
     string caller = 1;    //发起呼叫的人的账号
     string becalled = 2;  //被呼叫的人的账号
-    string roomid = 3 ;    //用于通信的rommid
+    string roomid = 3 ;    //用于通信的roomid
 }
 
 //服务器回复终止通话
@@ -62,5 +62,5 @@ message SCTerminateChat {
     int32 errid = 1;
     string caller = 2;    //发起呼叫的人的账号
     string becalled = 3;  //被呼叫的人的账号
-    string roomid = 4 ;    //用于通信的rommid
+    string roomid = 4 ;    //用于通信的roomid
 }

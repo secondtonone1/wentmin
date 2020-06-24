@@ -1,7 +1,6 @@
 package weblogic
 
 import (
-	"crypto/md5"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -19,7 +18,7 @@ var WebLogicLock sync.RWMutex
 
 func init() {
 	WebMsgMap = make(map[int]func(*websocket.Conn, string) error)
-	RegMsgHandler(common.WEB_CS_USER_REG, UserReg)
+	RegMsgHandler(common.WEB_CS_USER_REG, UserLogin)
 	RegMsgHandler(common.WEB_CS_USER_CALL, UserCall)
 	RegMsgHandler(common.WEB_REPLY_BECALL, UserCallReply)
 	RegMsgHandler(common.WEB_CS_TERMINAL_CALL, UserTerminalCall)
@@ -39,7 +38,7 @@ func HandleWebMsg(conn *websocket.Conn, msgid int, msgdata string) error {
 	return handler(conn, msgdata)
 }
 
-func UserReg(conn *websocket.Conn, msgdata string) error {
+func UserLogin(conn *websocket.Conn, msgdata string) error {
 	fmt.Println("receive user reg req , msgdata is ", string(msgdata))
 	csreg := &jsonproto.CSUserLogin{}
 	err := json.Unmarshal([]byte(msgdata), csreg)
@@ -61,7 +60,7 @@ func UserReg(conn *websocket.Conn, msgdata string) error {
 	//将时间戳设置成种子数
 	rand.Seed(time.Now().UnixNano())
 	randres := rand.Intn(100)
-	screg.Token = csreg.AccountId + "." + timestr + "." + strconv.Itoa(randres)
+	screg.Token = csreg.AccountId + "-" + timestr + "-" + strconv.Itoa(randres)
 
 	jsreg, _ := json.Marshal(screg)
 	jsmsg := jsonproto.JsonMsg{MsgId: common.WEB_SC_USER_REG, MsgData: string(jsreg)}
@@ -143,10 +142,14 @@ func UserCall(conn *websocket.Conn, msgdata string) error {
 	callring.Caller = cscall.Caller
 	callring.BeCalled = cscall.BeCalled
 
-	timestr := time.Now().Format("2006-01-02 15:04:05")
-	rommidstr := fmt.Sprintf("%x", md5.Sum([]byte(cscall.Caller+cscall.BeCalled+timestr)))
-	fmt.Println("roomid str is ", rommidstr)
-	callring.Roomid = rommidstr
+	rand.Seed(time.Now().UnixNano())
+	randres := rand.Intn(100)
+
+	timestr := time.Now().Format("20060102150405")
+	roomidstr := cscall.Caller + "-" + cscall.BeCalled + "-" + timestr + "-" + strconv.Itoa(randres)
+
+	fmt.Println("roomid str is ", roomidstr)
+	callring.Roomid = roomidstr
 	ringms, _ := json.Marshal(callring)
 	ringmsg := &jsonproto.JsonMsg{}
 	ringmsg.MsgId = common.WEB_NOTIFY_CALLRING
@@ -165,7 +168,7 @@ func UserCall(conn *websocket.Conn, msgdata string) error {
 	}
 
 	//将两个人放入房间
-	chatroot := &ChatRoom{Roomid: rommidstr, Caller: cscall.Caller, Becalled: cscall.BeCalled}
+	chatroot := &ChatRoom{Roomid: roomidstr, Caller: cscall.Caller, Becalled: cscall.BeCalled}
 	ChatMgrInst.AddRoom(chatroot)
 
 	//被呼叫人在线，通知被呼叫人
@@ -173,7 +176,7 @@ func UserCall(conn *websocket.Conn, msgdata string) error {
 	notifybecall := &jsonproto.SCNotifyBeCall{}
 	notifybecall.Caller = cscall.Caller
 	notifybecall.BeCalled = cscall.BeCalled
-	notifybecall.Roomid = rommidstr
+	notifybecall.Roomid = roomidstr
 	notifybecall.IsAudioOnly = cscall.IsAudioOnly
 
 	notifyms, _ := json.Marshal(notifybecall)
@@ -284,6 +287,7 @@ func UserTerminalCall(conn *websocket.Conn, msgdata string) error {
 	fmt.Println("caller is ", cstcall.Caller)
 	fmt.Println("becalled is ", cstcall.BeCalled)
 	fmt.Println("roomid is ", cstcall.Roomid)
+	fmt.Println("cancel is ", cstcall.Cancel)
 
 	//清除房间信息，
 	room := ChatMgrInst.GetRoom(cstcall.Roomid)
@@ -293,24 +297,32 @@ func UserTerminalCall(conn *websocket.Conn, msgdata string) error {
 		ChatMgrInst.DelRoom(cstcall.Roomid)
 	}
 
-	becaller, err := UserMgrInst.GetUser(cstcall.BeCalled)
+	//被通知的另一方，另一方被挂断,假设是被呼叫人
+	beterminated := cstcall.BeCalled
+	//如果是被呼叫人挂断，将被中断的一方设置为呼叫人
+	if cstcall.Cancel == cstcall.BeCalled {
+		beterminated = cstcall.Caller
+	}
+
+	beterminal, err := UserMgrInst.GetUser(beterminated)
 	if err != nil {
-		fmt.Println("not found becaller ")
+		fmt.Println("not found beterminal ")
 		return nil
 	}
 
-	if !becaller.IsOnline() {
-		fmt.Println("becaller is not online")
+	if !beterminal.IsOnline() {
+		fmt.Println("beterminal is not online")
 		return nil
 	}
 
-	becallConn := becaller.GetConn()
+	beterminalConn := beterminal.GetConn()
 
-	//同时发送消息推送给被呼人挂断
+	//同时发送消息推送给另一方挂断信息
 	scbecall := &jsonproto.SCTerminalBeCall{}
 	scbecall.BeCalled = cstcall.BeCalled
 	scbecall.Caller = cstcall.Caller
 	scbecall.Roomid = cstcall.Roomid
+	scbecall.Cancel = cstcall.Cancel
 
 	scbecallms, _ := json.Marshal(scbecall)
 
@@ -318,7 +330,7 @@ func UserTerminalCall(conn *websocket.Conn, msgdata string) error {
 	jmsg.MsgId = common.WEB_SC_TERMINAL_BECALL
 	jmsg.MsgData = string(scbecallms)
 	jmsgms, _ := json.Marshal(jmsg)
-	nw, err := becallConn.Write(jmsgms)
+	nw, err := beterminalConn.Write(jmsgms)
 	if err != nil {
 		fmt.Println("write failed")
 		return common.ErrWebSocketClosed

@@ -401,7 +401,7 @@ type SCNotifyChat struct {
 
 	Caller   string `protobuf:"bytes,1,opt,name=caller,proto3" json:"caller,omitempty"`     //发起呼叫的人的账号
 	Becalled string `protobuf:"bytes,2,opt,name=becalled,proto3" json:"becalled,omitempty"` //被呼叫的人的账号
-	Roomid   string `protobuf:"bytes,3,opt,name=roomid,proto3" json:"roomid,omitempty"`     //用于通信的rommid
+	Roomid   string `protobuf:"bytes,3,opt,name=roomid,proto3" json:"roomid,omitempty"`     //用于通信的roomid
 }
 
 func (x *SCNotifyChat) Reset() {
@@ -465,7 +465,7 @@ type CSTerminateChat struct {
 
 	Caller   string `protobuf:"bytes,1,opt,name=caller,proto3" json:"caller,omitempty"`     //发起呼叫的人的账号
 	Becalled string `protobuf:"bytes,2,opt,name=becalled,proto3" json:"becalled,omitempty"` //被呼叫的人的账号
-	Roomid   string `protobuf:"bytes,3,opt,name=roomid,proto3" json:"roomid,omitempty"`     //用于通信的rommid
+	Roomid   string `protobuf:"bytes,3,opt,name=roomid,proto3" json:"roomid,omitempty"`     //用于通信的roomid
 }
 
 func (x *CSTerminateChat) Reset() {
@@ -530,7 +530,7 @@ type SCTerminateChat struct {
 	Errid    int32  `protobuf:"varint,1,opt,name=errid,proto3" json:"errid,omitempty"`
 	Caller   string `protobuf:"bytes,2,opt,name=caller,proto3" json:"caller,omitempty"`     //发起呼叫的人的账号
 	Becalled string `protobuf:"bytes,3,opt,name=becalled,proto3" json:"becalled,omitempty"` //被呼叫的人的账号
-	Roomid   string `protobuf:"bytes,4,opt,name=roomid,proto3" json:"roomid,omitempty"`     //用于通信的rommid
+	Roomid   string `protobuf:"bytes,4,opt,name=roomid,proto3" json:"roomid,omitempty"`     //用于通信的roomid
 }
 
 func (x *SCTerminateChat) Reset() {
