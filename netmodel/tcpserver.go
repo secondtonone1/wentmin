@@ -36,8 +36,8 @@ func NewTcpServer() (*WtServer, error) {
 
 	TcpServerInst = &WtServer{listener: listenert,
 		once: &sync.Once{}, sessionGroup: &sync.WaitGroup{},
-		notifyMain: make(chan struct{}), sessionMap: make(map[int]*Session),
-		SocketIndex: 0, UnUsedSocketMap: make(map[int]bool)}
+		notifyMain: make(chan struct{}), sessionMap: make(map[string]*Session),
+		SocketIndex: 0}
 
 	//创建消息处理队列
 	NewMsgQueue()
@@ -49,14 +49,13 @@ func NewTcpServer() (*WtServer, error) {
 }
 
 type WtServer struct {
-	listener        net.Listener
-	once            *sync.Once
-	sessionGroup    *sync.WaitGroup
-	notifyMain      chan struct{}
-	sessionMap      map[int]*Session
-	sessionLock     sync.Mutex
-	SocketIndex     int
-	UnUsedSocketMap map[int]bool
+	listener     net.Listener
+	once         *sync.Once
+	sessionGroup *sync.WaitGroup
+	notifyMain   chan struct{}
+	sessionMap   map[string]*Session
+	sessionLock  sync.Mutex
+	SocketIndex  int
 }
 
 //主协程主动关闭accept
@@ -68,31 +67,10 @@ func (wt *WtServer) Close() {
 	})
 }
 
-func (wt *WtServer) GenerateSocket() int {
-	//fmt.Println("unused socket map is ", wt.UnUsedSocketMap)
-	if len(wt.UnUsedSocketMap) < 20 {
-		wt.SocketIndex++
-		return wt.SocketIndex
-	}
-
-	value := 0
-	for k, _ := range wt.UnUsedSocketMap {
-		value = k
-		delete(wt.UnUsedSocketMap, k)
-	}
-	return value
-}
-
-func (wt *WtServer) RecycleSocket(socket int) {
-	wt.UnUsedSocketMap[socket] = true
-	//fmt.Println("after RecycleSocket, unusedsocket map is ", wt.UnUsedSocketMap)
-}
-
 func (wt *WtServer) OnSessConnect(se *Session) {
 	wt.sessionLock.Lock()
 	defer wt.sessionLock.Unlock()
 	wt.sessionGroup.Add(1)
-	se.SocketId = wt.GenerateSocket()
 	wt.sessionMap[se.SocketId] = se
 	se.Start()
 }
@@ -155,15 +133,14 @@ func (wt *WtServer) ClearSessions() {
 		//清除所有连接，意味着服务器可能要官服，那么就不投递连接断开消息
 		//MsgQueueInst.PutCloseMsgInQue(session)
 		delete(wt.sessionMap, id)
-		wt.RecycleSocket(id)
 		wt.sessionGroup.Done()
-		fmt.Printf("session id %d closed successfully\n", id)
-		logs.Debug("session id %d closed successfully\n", id)
+		fmt.Printf("session id %s closed successfully\n", id)
+		logs.Debug("session id %s closed successfully\n", id)
 	}
 }
 
 //服务器主动关闭session
-func (wt *WtServer) CloseSession(sid int) {
+func (wt *WtServer) CloseSession(sid string) {
 	wt.sessionLock.Lock()
 	defer wt.sessionLock.Unlock()
 	session, ok := wt.sessionMap[sid]
@@ -175,14 +152,13 @@ func (wt *WtServer) CloseSession(sid int) {
 	session.Close()
 	MsgQueueInst.PutCloseMsgInQue(session)
 	delete(wt.sessionMap, sid)
-	wt.RecycleSocket(sid)
 	wt.sessionGroup.Done()
-	fmt.Printf("session id %d closed successfully\n", sid)
-	logs.Debug("session id %d closed successfully\n", sid)
+	fmt.Printf("session id %s closed successfully\n", sid)
+	logs.Debug("session id %s closed successfully\n", sid)
 }
 
 //连接断开回调函数
-func (wt *WtServer) OnSessionClosed(sid int) {
+func (wt *WtServer) OnSessionClosed(sid string) {
 	if err := recover(); err != nil {
 		fmt.Println(" recover from error ", err)
 		logs.Debug(" recover from error ", err)
@@ -192,17 +168,16 @@ func (wt *WtServer) OnSessionClosed(sid int) {
 	defer wt.sessionLock.Unlock()
 	session, ok := wt.sessionMap[sid]
 	if !ok {
-		fmt.Printf("not found session by %d , maybe it has been closed \n", sid)
-		logs.Debug("not found session by %d , maybe it has been closed \n", sid)
+		fmt.Printf("not found session by %s , maybe it has been closed \n", sid)
+		logs.Debug("not found session by %s , maybe it has been closed \n", sid)
 		return
 	}
 	session.Close()
 	MsgQueueInst.PutCloseMsgInQue(session)
 	delete(wt.sessionMap, sid)
-	wt.RecycleSocket(sid)
 	wt.sessionGroup.Done()
-	fmt.Printf("session id %d closed successfully\n", sid)
-	logs.Debug("session id %d closed successfully\n", sid)
+	fmt.Printf("session id %s closed successfully\n", sid)
+	logs.Debug("session id %s closed successfully\n", sid)
 }
 
 func (wt *WtServer) ClearDeadSession() {
@@ -211,14 +186,13 @@ func (wt *WtServer) ClearDeadSession() {
 	cur := time.Now().Unix()
 	for _, session := range wt.sessionMap {
 		if !session.CheckAlive(cur) {
-			fmt.Printf("session id %d not alive ", session.SocketId)
+			fmt.Printf("session id %s not alive ", session.SocketId)
 			session.Close()
 			MsgQueueInst.PutCloseMsgInQue(session)
 			delete(wt.sessionMap, session.SocketId)
-			wt.RecycleSocket(session.SocketId)
 			wt.sessionGroup.Done()
-			fmt.Printf("session id %d closed successfully\n", session.SocketId)
-			logs.Debug("session id %d closed successfully\n", session.SocketId)
+			fmt.Printf("session id %s closed successfully\n", session.SocketId)
+			logs.Debug("session id %s closed successfully\n", session.SocketId)
 		}
 	}
 }

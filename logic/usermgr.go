@@ -14,14 +14,14 @@ type UserData struct {
 
 type UserMgr struct {
 	UsersMap    map[string]*UserData
-	SessUserMap map[int]*UserData
+	SessUserMap map[string]*UserData
 }
 
 var UserMgrInst *UserMgr
 
 func init() {
 	UserMgrInst = &UserMgr{UsersMap: make(map[string]*UserData),
-		SessUserMap: make(map[int]*UserData)}
+		SessUserMap: make(map[string]*UserData)}
 }
 
 func (self *UserMgr) AddUser(user *UserData) {
@@ -30,7 +30,7 @@ func (self *UserMgr) AddUser(user *UserData) {
 	self.SessUserMap[sid] = user
 }
 
-func (self *UserMgr) SetUserOffline(sid int) {
+func (self *UserMgr) SetUserOffline(sid string) {
 	ud, ok := self.SessUserMap[sid]
 	if !ok {
 		return

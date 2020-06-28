@@ -8,6 +8,7 @@ import (
 	"wentmin/protocol"
 
 	"github.com/astaxie/beego/logs"
+	uuid "github.com/satori/go.uuid"
 )
 
 type Session struct {
@@ -15,9 +16,9 @@ type Session struct {
 	closed     int32                  //session是否关闭，-1未开启，0未关闭，1关闭
 	protocol   protocol.ProtocolInter //字节序和自己处理器
 	RWLock     sync.RWMutex           //协程锁
-	SocketId   int                    // 当前socket
+	SocketId   string                 // 当前socket
 	AliveTime  int64
-	LastSocket int // 上次socket
+	LastSocket string // 上次socket
 }
 
 type MsgSession struct {
@@ -27,11 +28,17 @@ type MsgSession struct {
 
 func NewSession(connt net.Conn,
 ) *Session {
+	uid, err := uuid.NewV4()
+	if err != nil {
+		fmt.Printf("generate uid faled, error is %v \n", err.Error())
+		return nil
+	}
 	sess := &Session{
 		conn:      connt,
 		closed:    -1,
 		protocol:  new(protocol.ProtocolImpl),
 		AliveTime: time.Now().Unix(),
+		SocketId:  uid.String(),
 	}
 	tcpConn := sess.conn.(*net.TCPConn)
 	tcpConn.SetNoDelay(true)
@@ -40,13 +47,19 @@ func NewSession(connt net.Conn,
 	return sess
 }
 
-func (se *Session) GetSocketId() int {
+func (se *Session) GetSocketId() string {
 	se.RWLock.RLock()
 	defer se.RWLock.RUnlock()
 	return se.SocketId
 }
 
-func (se *Session) GetLastSocket() int {
+func (se *Session) GetSocketLen() int {
+	se.RWLock.RLock()
+	defer se.RWLock.RUnlock()
+	return len(se.SocketId)
+}
+
+func (se *Session) GetLastSocket() string {
 	se.RWLock.RLock()
 	defer se.RWLock.RUnlock()
 	return se.LastSocket
@@ -96,7 +109,7 @@ func (se *Session) Close() error {
 		return nil
 	}
 	se.LastSocket = se.SocketId
-	se.SocketId = 0
+	se.SocketId = ""
 	se.closed = 1
 	se.conn.Close()
 	return nil

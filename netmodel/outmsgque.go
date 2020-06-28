@@ -66,7 +66,7 @@ func (oq *OutMsgQue) PostMsgtoOutQue(sess *Session, msgpkg *protocol.MsgPacket) 
 	msgse.session = sess
 	msgse.packet = msgpkg
 
-	msgchan := oq.GetMsgChanByIndex(msgse.session.GetSocketId() % components.OutputQueNum)
+	msgchan := oq.GetMsgChanByIndex(msgse.session.GetSocketLen() % components.OutputQueNum)
 	if msgchan == nil {
 		return
 	}
