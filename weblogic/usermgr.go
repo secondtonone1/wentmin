@@ -3,7 +3,7 @@ package weblogic
 import (
 	"fmt"
 	"time"
-	"wentmin/common"
+	"videocall/common"
 
 	"golang.org/x/net/websocket"
 )
@@ -108,6 +108,7 @@ func (um *UserMgr) OnOffline(conn *websocket.Conn) {
 		return
 	}
 	ud.Conn = nil
+	ChatMgrInst.DelRoomByUser(ud.AccountId)
 }
 
 func (ud *UserData) IsOnline() bool {

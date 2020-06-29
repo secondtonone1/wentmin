@@ -2,7 +2,7 @@ package weblogic
 
 import (
 	"sync"
-	"wentmin/common"
+	"videocall/common"
 
 	"golang.org/x/net/websocket"
 )
@@ -16,6 +16,10 @@ func init() {
 	RegMsgHandler(common.WEB_CS_USER_CALL, UserCall)
 	RegMsgHandler(common.WEB_REPLY_BECALL, UserCallReply)
 	RegMsgHandler(common.WEB_CS_TERMINAL_CALL, UserTerminalCall)
+	RegMsgHandler(common.WEB_CS_CALL_OFFER, ReceiveOffer)
+	RegMsgHandler(common.WEB_CS_BECALL_ANSWER, ReceiveAnswer)
+	RegMsgHandler(common.WEB_CS_CALL_ICE, ReceiveCallIce)
+	RegMsgHandler(common.WEB_CS_BECALL_ICE, ReceiveBeCallIce)
 }
 
 func RegMsgHandler(msgid int, handler func(*websocket.Conn, string) error) {

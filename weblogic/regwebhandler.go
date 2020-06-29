@@ -4,14 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"wentmin/jsonproto"
+	"videocall/jsonproto"
 
 	"net/http"
 
 	"golang.org/x/net/websocket"
 )
 
-//  ws://localhost:9527/wsmsg
+//  ws://localhost:9528/wsmsg
 func RegWSHandlers() {
 	http.Handle("/wsmsg", svrConnHandler)
 }

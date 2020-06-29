@@ -54,4 +54,5 @@ var (
 	ErrMsgIDNotReg         = errors.New("Msgid not reg")
 	ErrJsonUnMarshal       = errors.New("Json unmarshal failed ")
 	ErrAccountNotFound     = errors.New("Account not found !!")
+	ErrConnInvalid         = errors.New("Connection invalid")
 )

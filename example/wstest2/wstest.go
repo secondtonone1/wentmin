@@ -6,8 +6,8 @@ import (
 	"os"
 	"sync"
 
-	"wentmin/common"
-	"wentmin/jsonproto"
+	"videocall/common"
+	"videocall/jsonproto"
 
 	"golang.org/x/net/websocket"
 )
@@ -15,8 +15,8 @@ import (
 var gLocker sync.Mutex    //全局锁
 var gCondition *sync.Cond //全局条件变量
 
-var origin = "http://192.168.34.244:9527/"
-var url = "ws://192.168.34.244:9527/wsmsg"
+var origin = "http://127.0.0.1:9527/"
+var url = "ws://127.0.0.1:9527/wsmsg"
 
 //错误处理函数
 func checkErr(err error, extra string) bool {
@@ -73,7 +73,7 @@ func clientConnHandler(conn *websocket.Conn) {
 			break
 		}
 
-		fmt.Println("reg rsp  is ", string(request))
+		fmt.Println("notify   is ", string(request))
 		jsonmsg := &jsonproto.JsonMsg{}
 		err = json.Unmarshal(request[:readLen], jsonmsg)
 		if err != nil {
@@ -85,6 +85,8 @@ func clientConnHandler(conn *websocket.Conn) {
 		_ = json.Unmarshal(jsondata, becall)
 		fmt.Println("becall is ", becall.BeCalled)
 		fmt.Println("caller is ", becall.Caller)
+		fmt.Println("roomid is ", becall.Roomid)
+		fmt.Println("audioonly is ", becall.IsAudioOnly)
 
 		//同意接通
 		jsonmsg = &jsonproto.JsonMsg{}
@@ -93,11 +95,13 @@ func clientConnHandler(conn *websocket.Conn) {
 		becallr.BeCalled = becall.BeCalled
 		becallr.Caller = becall.Caller
 		becallr.Agree = true
+		becallr.Roomid = becall.Roomid
 		jstmp, _ := json.Marshal(becallr)
 		jsonmsg.MsgData = string(jstmp)
 		jstmp, _ = json.Marshal(jsonmsg)
 		conn.Write(jstmp)
 
+		//等待对方发送中断通话
 		request = make([]byte, 1280)
 		readLen, err = conn.Read(request)
 		if checkErr(err, "Read") {
@@ -114,6 +118,20 @@ func clientConnHandler(conn *websocket.Conn) {
 			break
 		}
 
+		fmt.Println("receive terminal msg is ", string(request))
+		jsonmsg = &jsonproto.JsonMsg{}
+		err = json.Unmarshal(request[:readLen], jsonmsg)
+		if err != nil {
+			fmt.Println("err is ", err.Error())
+		}
+		fmt.Println("receive notify jsondata msg is ", jsonmsg.MsgData)
+		jsondata = []byte(jsonmsg.MsgData)
+		terminalcall := &jsonproto.SCTerminalBeCall{}
+		_ = json.Unmarshal(jsondata, terminalcall)
+		fmt.Println("becall is ", terminalcall.BeCalled)
+		fmt.Println("caller is ", terminalcall.Caller)
+		fmt.Println("roomid is ", terminalcall.Roomid)
+		fmt.Println("cancel is ", terminalcall.Cancel)
 		//条件变量同步通知
 		gCondition.Signal()
 		break
@@ -151,5 +169,5 @@ func main() {
 		break
 	}
 	gLocker.Unlock()
-	fmt.Println("Client finish.")
+	fmt.Println("Client2 finish.")
 }

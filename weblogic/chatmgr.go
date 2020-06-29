@@ -29,6 +29,15 @@ func (cm *ChatMgr) GetRoom(roomid string) *ChatRoom {
 	return room
 }
 
+func (cm *ChatMgr) DelRoomByUser(userid string) {
+	for roomid, val := range cm.ChatRoomMap {
+		if val.Caller == userid || val.Becalled == userid {
+			delete(cm.ChatRoomMap, roomid)
+			return
+		}
+	}
+}
+
 func init() {
 	ChatMgrInst = &ChatMgr{}
 	ChatMgrInst.ChatRoomMap = make(map[string]*ChatRoom)
