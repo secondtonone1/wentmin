@@ -3,7 +3,7 @@ package weblogic
 import (
 	"fmt"
 	"time"
-	"videocall/common"
+	"wentmin/common"
 
 	"golang.org/x/net/websocket"
 )
