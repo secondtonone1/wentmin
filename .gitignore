@@ -1,6 +1,7 @@
-logs/
+./logs/
 main.exe
 tcpserver/logs
 webserver/logs
 webserver/wentmin
 webserver/output.txt
+*.log
