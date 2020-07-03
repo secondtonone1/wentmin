@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"strconv"
 	"wentmin/common"
 	"wentmin/netmodel"

@@ -6,8 +6,8 @@ import (
 	"os"
 	"sync"
 
-	"videocall/common"
-	"videocall/jsonproto"
+	"wentmin/common"
+	"wentmin/jsonproto"
 
 	"golang.org/x/net/websocket"
 )

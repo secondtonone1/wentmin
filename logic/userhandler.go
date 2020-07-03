@@ -4,7 +4,7 @@ import (
 	"crypto/md5"
 	"fmt"
 	"math/rand"
-	"protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"strconv"
 	"time"
 	"wentmin/common"

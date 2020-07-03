@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"strconv"
 	"syscall"
 	"time"

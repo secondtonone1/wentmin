@@ -28,11 +28,7 @@ type MsgSession struct {
 
 func NewSession(connt net.Conn,
 ) *Session {
-	uid, err := uuid.NewV4()
-	if err != nil {
-		fmt.Printf("generate uid faled, error is %v \n", err.Error())
-		return nil
-	}
+	uid := uuid.NewV4()
 	sess := &Session{
 		conn:      connt,
 		closed:    -1,

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"videocall/jsonproto"
+	"wentmin/jsonproto"
 
 	"net/http"
 

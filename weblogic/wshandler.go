@@ -2,7 +2,7 @@ package weblogic
 
 import (
 	"sync"
-	"videocall/common"
+	"wentmin/common"
 
 	"golang.org/x/net/websocket"
 )

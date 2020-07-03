@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
-	"protobuf/proto"
 	"wentmin/common"
 	"wentmin/netmodel"
 	wtproto "wentmin/proto"
 	"wentmin/protocol"
+
+	"github.com/golang/protobuf/proto"
 )
 
 func main() {
