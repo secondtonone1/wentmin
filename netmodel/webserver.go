@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"wentmin/common"
 	"wentmin/components"
-	"wentserver/config"
 )
 
 type WebServer struct {
@@ -23,7 +23,7 @@ func (wb *WebServer) Start() {
 	fmt.Println("web server start...")
 	err := wb.ListenAndServe()
 	if err != nil {
-		fmt.Println(config.ErrWebListenFailed.Error())
+		fmt.Println(common.ErrWebListenFailed.Error())
 		return
 	}
 }
