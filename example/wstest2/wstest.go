@@ -9,6 +9,7 @@ import (
 	"wentmin/common"
 	"wentmin/jsonproto"
 
+	"github.com/goinggo/mapstructure"
 	"golang.org/x/net/websocket"
 )
 
@@ -80,9 +81,9 @@ func clientConnHandler(conn *websocket.Conn) {
 			fmt.Println("err is ", err.Error())
 		}
 		fmt.Println("receive notify jsondata msg is ", jsonmsg.MsgData)
-		jsondata := []byte(jsonmsg.MsgData)
 		becall := &jsonproto.SCNotifyBeCall{}
-		_ = json.Unmarshal(jsondata, becall)
+		mapstructure.Decode(jsonmsg.MsgData, becall)
+
 		fmt.Println("becall is ", becall.BeCalled)
 		fmt.Println("caller is ", becall.Caller)
 		fmt.Println("roomid is ", becall.Roomid)
@@ -96,9 +97,9 @@ func clientConnHandler(conn *websocket.Conn) {
 		becallr.Caller = becall.Caller
 		becallr.Agree = true
 		becallr.Roomid = becall.Roomid
-		jstmp, _ := json.Marshal(becallr)
-		jsonmsg.MsgData = string(jstmp)
-		jstmp, _ = json.Marshal(jsonmsg)
+
+		jsonmsg.MsgData = becallr
+		jstmp, _ := json.Marshal(jsonmsg)
 		conn.Write(jstmp)
 
 		//等待对方发送中断通话
@@ -125,9 +126,8 @@ func clientConnHandler(conn *websocket.Conn) {
 			fmt.Println("err is ", err.Error())
 		}
 		fmt.Println("receive notify jsondata msg is ", jsonmsg.MsgData)
-		jsondata = []byte(jsonmsg.MsgData)
 		terminalcall := &jsonproto.SCTerminalBeCall{}
-		_ = json.Unmarshal(jsondata, terminalcall)
+		mapstructure.Decode(jsonmsg.MsgData, terminalcall)
 		fmt.Println("becall is ", terminalcall.BeCalled)
 		fmt.Println("caller is ", terminalcall.Caller)
 		fmt.Println("roomid is ", terminalcall.Roomid)
@@ -154,10 +154,9 @@ func main() {
 
 	jsMsg := &jsonproto.JsonMsg{}
 	jsMsg.MsgId = common.WEB_CS_USER_REG
-	jsmal, _ := json.Marshal(regMsg)
-	jsMsg.MsgData = string(jsmal)
+	jsMsg.MsgData = regMsg
 
-	jsmal, _ = json.Marshal(jsMsg)
+	jsmal, _ := json.Marshal(jsMsg)
 	fmt.Println("send data is ", string(jsmal))
 	_, err = conn.Write(jsmal)
 	go clientConnHandler(conn)

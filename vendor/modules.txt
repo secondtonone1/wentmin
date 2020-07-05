@@ -2,6 +2,9 @@
 ## explicit
 github.com/astaxie/beego/config
 github.com/astaxie/beego/logs
+# github.com/goinggo/mapstructure v0.0.0-20140717182941-194205d9b4a9
+## explicit
+github.com/goinggo/mapstructure
 # github.com/golang/protobuf v1.4.2
 ## explicit
 github.com/golang/protobuf/proto

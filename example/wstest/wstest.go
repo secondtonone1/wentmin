@@ -10,6 +10,7 @@ import (
 	"wentmin/common"
 	"wentmin/jsonproto"
 
+	"github.com/goinggo/mapstructure"
 	"golang.org/x/net/websocket"
 )
 
@@ -70,10 +71,8 @@ func clientConnHandler(conn *websocket.Conn) {
 
 		jsMsg := &jsonproto.JsonMsg{}
 		jsMsg.MsgId = common.WEB_CS_USER_CALL
-		jsmal, _ := json.Marshal(callMsg)
-		jsMsg.MsgData = string(jsmal)
-
-		jsmal, _ = json.Marshal(jsMsg)
+		jsMsg.MsgData = callMsg
+		jsmal, _ := json.Marshal(jsMsg)
 		fmt.Println("send data is ", string(jsmal))
 		_, err = conn.Write(jsmal)
 
@@ -103,10 +102,16 @@ func clientConnHandler(conn *websocket.Conn) {
 			fmt.Println("err is ", err.Error())
 		}
 		fmt.Println("receive notify jsondata msg is ", jsonmsg.MsgData)
-		jsondata := []byte(jsonmsg.MsgData)
 
 		ringmsg := &jsonproto.SCNotifyCallRing{}
-		_ = json.Unmarshal(jsondata, ringmsg)
+
+		if err := mapstructure.Decode(jsonmsg.MsgData, ringmsg); err != nil {
+			fmt.Println("map to struct failed, err is ", err)
+			//条件变量同步通知
+			gCondition.Signal()
+			break
+		}
+
 		fmt.Println("becall is ", ringmsg.BeCalled)
 		fmt.Println("caller is ", ringmsg.Caller)
 		fmt.Println("errorid is ", ringmsg.ErrorId)
@@ -136,9 +141,16 @@ func clientConnHandler(conn *websocket.Conn) {
 			fmt.Println("err is ", err.Error())
 		}
 		fmt.Println("receive notify jsondata msg is ", jsonmsg.MsgData)
-		jsondata = []byte(jsonmsg.MsgData)
+
 		becallss := &jsonproto.SCUserCall{}
-		_ = json.Unmarshal(jsondata, becallss)
+
+		if err := mapstructure.Decode(jsonmsg.MsgData, becallss); err != nil {
+			fmt.Println("map to struct failed, err is ", err)
+			//条件变量同步通知
+			gCondition.Signal()
+			break
+		}
+
 		fmt.Println("becall is ", becallss.BeCalled)
 		fmt.Println("caller is ", becallss.Caller)
 		fmt.Println("errorid is ", becallss.ErrorId)
@@ -154,14 +166,15 @@ func clientConnHandler(conn *websocket.Conn) {
 		terminalCallMsg.Roomid = becallss.Roomid
 		jsMsg = &jsonproto.JsonMsg{}
 		jsMsg.MsgId = common.WEB_CS_TERMINAL_CALL
-		jsmal, _ = json.Marshal(terminalCallMsg)
-		jsMsg.MsgData = string(jsmal)
+
+		jsMsg.MsgData = terminalCallMsg
 
 		jsmal, _ = json.Marshal(jsMsg)
 		fmt.Println("send data is ", string(jsmal))
 		_, err = conn.Write(jsmal)
 
 		fmt.Println("end chat .....")
+
 		//条件变量同步通知
 		gCondition.Signal()
 		break
@@ -184,10 +197,9 @@ func main() {
 
 	jsMsg := &jsonproto.JsonMsg{}
 	jsMsg.MsgId = common.WEB_CS_USER_REG
-	jsmal, _ := json.Marshal(regMsg)
-	jsMsg.MsgData = string(jsmal)
+	jsMsg.MsgData = regMsg
 
-	jsmal, _ = json.Marshal(jsMsg)
+	jsmal, _ := json.Marshal(jsMsg)
 	fmt.Println("send data is ", string(jsmal))
 	_, err = conn.Write(jsmal)
 	go clientConnHandler(conn)

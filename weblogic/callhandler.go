@@ -9,23 +9,23 @@ import (
 	"wentmin/common"
 	"wentmin/jsonproto"
 
+	"github.com/goinggo/mapstructure"
 	"golang.org/x/net/websocket"
 )
 
-func UserLogin(conn *websocket.Conn, msgdata string) error {
-	fmt.Println("receive user reg req , msgdata is ", string(msgdata))
-	csreg := &jsonproto.CSUserLogin{}
-	err := json.Unmarshal([]byte(msgdata), csreg)
-	if err != nil {
-		fmt.Println("json unmarshal failed")
-		return common.ErrJsonUnMarshal
+func UserLogin(conn *websocket.Conn, msgdata interface{}) error {
+	cslogin := &jsonproto.CSUserLogin{}
+	if err := mapstructure.Decode(msgdata, cslogin); err != nil {
+		fmt.Println("map to struct failed, err is ", err)
+		return err
 	}
+	fmt.Printf("CSUserLogin data is :%v\n", cslogin)
 
 	ud := &UserData{}
-	ud.AccountId = csreg.AccountId
+	ud.AccountId = cslogin.AccountId
 	ud.Conn = conn
-	ud.Passwd = csreg.Passwd
-	ud.Phone = csreg.Phone
+	ud.Passwd = cslogin.Passwd
+	ud.Phone = cslogin.Phone
 	UserMgrInst.AddUser(ud)
 
 	screg := &jsonproto.SCUserLogin{}
@@ -34,10 +34,12 @@ func UserLogin(conn *websocket.Conn, msgdata string) error {
 	//将时间戳设置成种子数
 	rand.Seed(time.Now().UnixNano())
 	randres := rand.Intn(100)
-	screg.Token = csreg.AccountId + "-" + timestr + "-" + strconv.Itoa(randres)
+	screg.Token = cslogin.AccountId + "-" + timestr + "-" + strconv.Itoa(randres)
 
-	jsreg, _ := json.Marshal(screg)
-	jsmsg := jsonproto.JsonMsg{MsgId: common.WEB_SC_USER_REG, MsgData: string(jsreg)}
+	jsmsg := &jsonproto.JsonMsg{}
+	jsmsg.MsgId = common.WEB_SC_USER_REG
+	jsmsg.MsgData = screg
+
 	jsrt, _ := json.Marshal(jsmsg)
 
 	nw, err := conn.Write(jsrt)
@@ -52,14 +54,13 @@ func UserLogin(conn *websocket.Conn, msgdata string) error {
 	return nil
 }
 
-func UserCall(conn *websocket.Conn, msgdata string) error {
-	fmt.Println("receive user call req , msgdata is ", string(msgdata))
+func UserCall(conn *websocket.Conn, msgdata interface{}) error {
 	cscall := &jsonproto.CSUserCall{}
-	err := json.Unmarshal([]byte(msgdata), cscall)
-	if err != nil {
-		fmt.Println("json unmarshal failed")
-		return common.ErrJsonUnMarshal
+	if err := mapstructure.Decode(msgdata, cscall); err != nil {
+		fmt.Println("map to struct failed, err is ", err)
+		return err
 	}
+	fmt.Printf("CSUserCall data is :%v\n", cscall)
 
 	fmt.Println("caller is ", cscall.Caller)
 	fmt.Println("becalled is ", cscall.BeCalled)
@@ -71,21 +72,11 @@ func UserCall(conn *websocket.Conn, msgdata string) error {
 		sccall.Caller = cscall.Caller
 		sccall.BeCalled = cscall.BeCalled
 		sccall.ErrorId = common.RSP_USER_NOT_FOUND
-		sccallms, _ := json.Marshal(sccall)
 		jmsg := &jsonproto.JsonMsg{}
 		jmsg.MsgId = common.WEB_SC_USER_CALL
-		jmsg.MsgData = string(sccallms)
+		jmsg.MsgData = sccall
 		jmsgms, _ := json.Marshal(jmsg)
-		nw, err := conn.Write(jmsgms)
-		if err != nil {
-			fmt.Println("write failed")
-			return common.ErrWebSocketClosed
-		}
-		if nw == 0 {
-			fmt.Println("peer connection closed ")
-			return common.ErrWebSocketClosed
-		}
-		return nil
+		return SendData(conn, jmsgms)
 	}
 	//用户不在线
 	if !becall.IsOnline() {
@@ -94,21 +85,12 @@ func UserCall(conn *websocket.Conn, msgdata string) error {
 		sccall.BeCalled = cscall.BeCalled
 		sccall.ErrorId = common.RSP_USER_NOT_ONLINE
 		sccall.Phone = becall.Phone
-		sccallms, _ := json.Marshal(sccall)
+
 		jmsg := &jsonproto.JsonMsg{}
 		jmsg.MsgId = common.WEB_SC_USER_CALL
-		jmsg.MsgData = string(sccallms)
+		jmsg.MsgData = sccall
 		jmsgms, _ := json.Marshal(jmsg)
-		nw, err := conn.Write(jmsgms)
-		if err != nil {
-			fmt.Println("write failed")
-			return common.ErrWebSocketClosed
-		}
-		if nw == 0 {
-			fmt.Println("peer connection closed ")
-			return common.ErrWebSocketClosed
-		}
-		return nil
+		return SendData(conn, jmsgms)
 	}
 
 	//被呼叫人在线，回复主叫人唤起响铃
@@ -124,20 +106,16 @@ func UserCall(conn *websocket.Conn, msgdata string) error {
 
 	fmt.Println("roomid str is ", roomidstr)
 	callring.Roomid = roomidstr
-	ringms, _ := json.Marshal(callring)
+
 	ringmsg := &jsonproto.JsonMsg{}
 	ringmsg.MsgId = common.WEB_NOTIFY_CALLRING
-	ringmsg.MsgData = string(ringms)
+	ringmsg.MsgData = callring
 	ringmsgs, _ := json.Marshal(ringmsg)
 
 	fmt.Println("send call ring msg is ", string(ringmsgs))
-	ringnw, err := conn.Write(ringmsgs)
+	err = SendData(conn, ringmsgs)
 	if err != nil {
 		fmt.Println("write failed")
-		return common.ErrWebSocketClosed
-	}
-	if ringnw == 0 {
-		fmt.Println("peer connection closed ")
 		return common.ErrWebSocketClosed
 	}
 
@@ -153,33 +131,21 @@ func UserCall(conn *websocket.Conn, msgdata string) error {
 	notifybecall.Roomid = roomidstr
 	notifybecall.IsAudioOnly = cscall.IsAudioOnly
 
-	notifyms, _ := json.Marshal(notifybecall)
 	jmsg := &jsonproto.JsonMsg{}
 	jmsg.MsgId = common.WEB_NOTIFY_BECALL
-	jmsg.MsgData = string(notifyms)
+	jmsg.MsgData = notifybecall
 	jmsgms, _ := json.Marshal(jmsg)
 	fmt.Println("send notify msg is ", string(jmsgms))
-	nw, err := becall.GetConn().Write(jmsgms)
-	if err != nil {
-		fmt.Println("write failed")
-		return common.ErrWebSocketClosed
-	}
-	if nw == 0 {
-		fmt.Println("peer connection closed ")
-		return common.ErrWebSocketClosed
-	}
-
-	return nil
+	return SendData(becall.GetConn(), jmsgms)
 }
 
-func UserCallReply(conn *websocket.Conn, msgdata string) error {
-	fmt.Println("receive user call reply , msgdata is ", string(msgdata))
+func UserCallReply(conn *websocket.Conn, msgdata interface{}) error {
 	cscall := &jsonproto.CSNotifyBeCall{}
-	err := json.Unmarshal([]byte(msgdata), cscall)
-	if err != nil {
-		fmt.Println("json unmarshal failed")
-		return common.ErrJsonUnMarshal
+	if err := mapstructure.Decode(msgdata, cscall); err != nil {
+		fmt.Println("map to struct failed, err is ", err)
+		return err
 	}
+	fmt.Printf("CSNotifyBeCall data is :%v\n", cscall)
 
 	fmt.Println("caller is ", cscall.Caller)
 	fmt.Println("becalled is ", cscall.BeCalled)
@@ -202,21 +168,12 @@ func UserCallReply(conn *websocket.Conn, msgdata string) error {
 		sccall.Caller = cscall.Caller
 		sccall.BeCalled = cscall.BeCalled
 		sccall.ErrorId = common.RSP_USER_NOT_AGREE
-		sccallms, _ := json.Marshal(sccall)
+
 		jmsg := &jsonproto.JsonMsg{}
 		jmsg.MsgId = common.WEB_SC_USER_CALL
-		jmsg.MsgData = string(sccallms)
+		jmsg.MsgData = sccall
 		jmsgms, _ := json.Marshal(jmsg)
-		nw, err := usrcaller.GetConn().Write(jmsgms)
-		if err != nil {
-			fmt.Println("write failed")
-			return common.ErrWebSocketClosed
-		}
-		if nw == 0 {
-			fmt.Println("peer connection closed ")
-			return common.ErrWebSocketClosed
-		}
-		return nil
+		return SendData(usrcaller.GetConn(), jmsgms)
 	}
 
 	//判断房间信息是否存在，可能主叫方此时已经挂断
@@ -232,10 +189,10 @@ func UserCallReply(conn *websocket.Conn, msgdata string) error {
 	sccall.BeCalled = cscall.BeCalled
 	sccall.ErrorId = common.RSP_SUCCESS
 	sccall.Roomid = cscall.Roomid
-	sccallms, _ := json.Marshal(sccall)
+
 	jmsg := &jsonproto.JsonMsg{}
 	jmsg.MsgId = common.WEB_SC_USER_CALL
-	jmsg.MsgData = string(sccallms)
+	jmsg.MsgData = sccall
 	jmsgms, _ := json.Marshal(jmsg)
 	nw, err := usrcaller.GetConn().Write(jmsgms)
 	if err != nil {
@@ -250,14 +207,13 @@ func UserCallReply(conn *websocket.Conn, msgdata string) error {
 
 }
 
-func UserTerminalCall(conn *websocket.Conn, msgdata string) error {
-	fmt.Println("receive user terminal call  , msgdata is ", string(msgdata))
+func UserTerminalCall(conn *websocket.Conn, msgdata interface{}) error {
 	cstcall := &jsonproto.CSTerminalCall{}
-	err := json.Unmarshal([]byte(msgdata), cstcall)
-	if err != nil {
-		fmt.Println("json unmarshal failed")
-		return common.ErrJsonUnMarshal
+	if err := mapstructure.Decode(msgdata, cstcall); err != nil {
+		fmt.Println("map to struct failed, err is ", err)
+		return err
 	}
+	fmt.Printf("CSTerminalCall data is :%v\n", cstcall)
 
 	fmt.Println("caller is ", cstcall.Caller)
 	fmt.Println("becalled is ", cstcall.BeCalled)
@@ -299,22 +255,12 @@ func UserTerminalCall(conn *websocket.Conn, msgdata string) error {
 	scbecall.Roomid = cstcall.Roomid
 	scbecall.Cancel = cstcall.Cancel
 
-	scbecallms, _ := json.Marshal(scbecall)
-
 	jmsg := &jsonproto.JsonMsg{}
 	jmsg.MsgId = common.WEB_SC_TERMINAL_BECALL
-	jmsg.MsgData = string(scbecallms)
+	jmsg.MsgData = scbecall
 	jmsgms, _ := json.Marshal(jmsg)
-	nw, err := beterminalConn.Write(jmsgms)
-	if err != nil {
-		fmt.Println("write failed")
-		return common.ErrWebSocketClosed
-	}
-	if nw == 0 {
-		fmt.Println("peer connection closed ")
-		return common.ErrWebSocketClosed
-	}
-	return nil
+	return SendData(beterminalConn, jmsgms)
+
 }
 
 func SendData(conn *websocket.Conn, msgdata []byte) error {
@@ -336,15 +282,13 @@ func SendData(conn *websocket.Conn, msgdata []byte) error {
 }
 
 //收到主叫方offer
-func ReceiveOffer(conn *websocket.Conn, msgdata string) error {
-
-	fmt.Println("receive call offer  , msgdata is ", string(msgdata))
+func ReceiveOffer(conn *websocket.Conn, msgdata interface{}) error {
 	cscalloffer := &jsonproto.CSCallOffer{}
-	err := json.Unmarshal([]byte(msgdata), cscalloffer)
-	if err != nil {
-		fmt.Println("json unmarshal failed")
-		return common.ErrJsonUnMarshal
+	if err := mapstructure.Decode(msgdata, cscalloffer); err != nil {
+		fmt.Println("map to struct failed, err is ", err)
+		return err
 	}
+	fmt.Printf("CSCallOffer data is :%v\n", cscalloffer)
 
 	fmt.Println("caller is ", cscalloffer.Caller)
 	fmt.Println("becalled is ", cscalloffer.BeCalled)
@@ -362,11 +306,9 @@ func ReceiveOffer(conn *websocket.Conn, msgdata string) error {
 		scbecall.Roomid = cscalloffer.Roomid
 		scbecall.Cancel = "server"
 
-		scbecallms, _ := json.Marshal(scbecall)
-
 		jmsg := &jsonproto.JsonMsg{}
 		jmsg.MsgId = common.WEB_SC_TERMINAL_BECALL
-		jmsg.MsgData = string(scbecallms)
+		jmsg.MsgData = scbecall
 		jmsgms, _ := json.Marshal(jmsg)
 		//给主叫方推送挂断消息
 		return SendData(conn, jmsgms)
@@ -382,11 +324,9 @@ func ReceiveOffer(conn *websocket.Conn, msgdata string) error {
 		scbecall.Roomid = cscalloffer.Roomid
 		scbecall.Cancel = "server"
 
-		scbecallms, _ := json.Marshal(scbecall)
-
 		jmsg := &jsonproto.JsonMsg{}
 		jmsg.MsgId = common.WEB_SC_TERMINAL_BECALL
-		jmsg.MsgData = string(scbecallms)
+		jmsg.MsgData = scbecall
 		jmsgms, _ := json.Marshal(jmsg)
 		//给主叫方推送挂断消息
 		return SendData(conn, jmsgms)
@@ -404,11 +344,9 @@ func ReceiveOffer(conn *websocket.Conn, msgdata string) error {
 		scbecall.Roomid = cscalloffer.Roomid
 		scbecall.Cancel = "server"
 
-		scbecallms, _ := json.Marshal(scbecall)
-
 		jmsg := &jsonproto.JsonMsg{}
 		jmsg.MsgId = common.WEB_SC_TERMINAL_BECALL
-		jmsg.MsgData = string(scbecallms)
+		jmsg.MsgData = scbecall
 		jmsgms, _ := json.Marshal(jmsg)
 		//给主叫方推送挂断消息
 		return SendData(conn, jmsgms)
@@ -419,24 +357,22 @@ func ReceiveOffer(conn *websocket.Conn, msgdata string) error {
 	offernotify.Caller = cscalloffer.Caller
 	offernotify.Roomid = cscalloffer.Roomid
 	offernotify.Sdp = cscalloffer.Sdp
-	offernotifms, _ := json.Marshal(offernotify)
 
 	jmsg := &jsonproto.JsonMsg{}
 	jmsg.MsgId = common.WEB_SC_OFFER_NOTIFY
-	jmsg.MsgData = string(offernotifms)
+	jmsg.MsgData = offernotify
 	jmsgms, _ := json.Marshal(jmsg)
 	return SendData(becall.GetConn(), jmsgms)
 }
 
 //收到被叫方offer
-func ReceiveAnswer(conn *websocket.Conn, msgdata string) error {
-	fmt.Println("receive becall offer  , msgdata is ", string(msgdata))
+func ReceiveAnswer(conn *websocket.Conn, msgdata interface{}) error {
 	csanswer := &jsonproto.CSBecallAnswer{}
-	err := json.Unmarshal([]byte(msgdata), csanswer)
-	if err != nil {
-		fmt.Println("json unmarshal failed")
-		return common.ErrJsonUnMarshal
+	if err := mapstructure.Decode(msgdata, csanswer); err != nil {
+		fmt.Println("map to struct failed, err is ", err)
+		return err
 	}
+	fmt.Printf("CSBecallAnswer data is :%v\n", csanswer)
 
 	fmt.Println("caller is ", csanswer.Caller)
 	fmt.Println("becalled is ", csanswer.BeCalled)
@@ -454,11 +390,9 @@ func ReceiveAnswer(conn *websocket.Conn, msgdata string) error {
 		scbecall.Roomid = csanswer.Roomid
 		scbecall.Cancel = "server"
 
-		scbecallms, _ := json.Marshal(scbecall)
-
 		jmsg := &jsonproto.JsonMsg{}
 		jmsg.MsgId = common.WEB_SC_TERMINAL_BECALL
-		jmsg.MsgData = string(scbecallms)
+		jmsg.MsgData = scbecall
 		jmsgms, _ := json.Marshal(jmsg)
 		//通知被叫方挂断
 		return SendData(conn, jmsgms)
@@ -474,11 +408,9 @@ func ReceiveAnswer(conn *websocket.Conn, msgdata string) error {
 		scbecall.Roomid = csanswer.Roomid
 		scbecall.Cancel = "server"
 
-		scbecallms, _ := json.Marshal(scbecall)
-
 		jmsg := &jsonproto.JsonMsg{}
 		jmsg.MsgId = common.WEB_SC_TERMINAL_BECALL
-		jmsg.MsgData = string(scbecallms)
+		jmsg.MsgData = scbecall
 		jmsgms, _ := json.Marshal(jmsg)
 		//通知被叫方挂断
 		return SendData(conn, jmsgms)
@@ -497,11 +429,9 @@ func ReceiveAnswer(conn *websocket.Conn, msgdata string) error {
 		scbecall.Roomid = csanswer.Roomid
 		scbecall.Cancel = "server"
 
-		scbecallms, _ := json.Marshal(scbecall)
-
 		jmsg := &jsonproto.JsonMsg{}
 		jmsg.MsgId = common.WEB_SC_TERMINAL_BECALL
-		jmsg.MsgData = string(scbecallms)
+		jmsg.MsgData = scbecall
 		jmsgms, _ := json.Marshal(jmsg)
 		//给主叫方推送挂断消息
 		return SendData(conn, jmsgms)
@@ -514,24 +444,23 @@ func ReceiveAnswer(conn *websocket.Conn, msgdata string) error {
 	answernotify.Caller = csanswer.Caller
 	answernotify.Roomid = csanswer.Roomid
 	answernotify.Sdp = csanswer.Sdp
-	answernotifyms, _ := json.Marshal(answernotify)
 
 	jmsg := &jsonproto.JsonMsg{}
 	jmsg.MsgId = common.WEB_SC_ANSWER_NOTIFY
-	jmsg.MsgData = string(answernotifyms)
+	jmsg.MsgData = answernotify
 	jmsgms, _ := json.Marshal(jmsg)
 	return SendData(caller.GetConn(), jmsgms)
 }
 
 //收到主叫方ice_candidate
-func ReceiveCallIce(conn *websocket.Conn, msgdata string) error {
-	fmt.Println("receive call ice  , msgdata is ", string(msgdata))
+func ReceiveCallIce(conn *websocket.Conn, msgdata interface{}) error {
+
 	callice := &jsonproto.CSCallIce{}
-	err := json.Unmarshal([]byte(msgdata), callice)
-	if err != nil {
-		fmt.Println("json unmarshal failed")
-		return common.ErrJsonUnMarshal
+	if err := mapstructure.Decode(msgdata, callice); err != nil {
+		fmt.Println("map to struct failed, err is ", err)
+		return err
 	}
+	fmt.Printf("CSCallIce data is :%v\n", callice)
 
 	fmt.Println("caller is ", callice.Caller)
 	fmt.Println("becalled is ", callice.BeCalled)
@@ -549,11 +478,9 @@ func ReceiveCallIce(conn *websocket.Conn, msgdata string) error {
 		scbecall.Roomid = callice.Roomid
 		scbecall.Cancel = "server"
 
-		scbecallms, _ := json.Marshal(scbecall)
-
 		jmsg := &jsonproto.JsonMsg{}
 		jmsg.MsgId = common.WEB_SC_TERMINAL_BECALL
-		jmsg.MsgData = string(scbecallms)
+		jmsg.MsgData = scbecall
 		jmsgms, _ := json.Marshal(jmsg)
 		//给主叫方推送挂断消息
 		return SendData(conn, jmsgms)
@@ -569,11 +496,9 @@ func ReceiveCallIce(conn *websocket.Conn, msgdata string) error {
 		scbecall.Roomid = callice.Roomid
 		scbecall.Cancel = "server"
 
-		scbecallms, _ := json.Marshal(scbecall)
-
 		jmsg := &jsonproto.JsonMsg{}
 		jmsg.MsgId = common.WEB_SC_TERMINAL_BECALL
-		jmsg.MsgData = string(scbecallms)
+		jmsg.MsgData = scbecall
 		jmsgms, _ := json.Marshal(jmsg)
 		//给主叫方推送挂断消息
 		return SendData(conn, jmsgms)
@@ -591,11 +516,9 @@ func ReceiveCallIce(conn *websocket.Conn, msgdata string) error {
 		scbecall.Roomid = callice.Roomid
 		scbecall.Cancel = "server"
 
-		scbecallms, _ := json.Marshal(scbecall)
-
 		jmsg := &jsonproto.JsonMsg{}
 		jmsg.MsgId = common.WEB_SC_TERMINAL_BECALL
-		jmsg.MsgData = string(scbecallms)
+		jmsg.MsgData = scbecall
 		jmsgms, _ := json.Marshal(jmsg)
 		//给主叫方推送挂断消息
 		return SendData(conn, jmsgms)
@@ -606,24 +529,23 @@ func ReceiveCallIce(conn *websocket.Conn, msgdata string) error {
 	ICEnotify.Caller = callice.Caller
 	ICEnotify.Roomid = callice.Roomid
 	ICEnotify.Candidate = callice.Candidate
-	ICEnotifyMS, _ := json.Marshal(ICEnotify)
 
 	jmsg := &jsonproto.JsonMsg{}
 	jmsg.MsgId = common.WEB_SC_CALL_ICE_NOTIFY
-	jmsg.MsgData = string(ICEnotifyMS)
+	jmsg.MsgData = ICEnotify
 	jmsgms, _ := json.Marshal(jmsg)
 	return SendData(becall.GetConn(), jmsgms)
 }
 
 //收到被叫方ice_candidate
-func ReceiveBeCallIce(conn *websocket.Conn, msgdata string) error {
-	fmt.Println("receive becall ice  , msgdata is ", string(msgdata))
+func ReceiveBeCallIce(conn *websocket.Conn, msgdata interface{}) error {
+
 	becallice := &jsonproto.CSBecallIce{}
-	err := json.Unmarshal([]byte(msgdata), becallice)
-	if err != nil {
-		fmt.Println("json unmarshal failed")
-		return common.ErrJsonUnMarshal
+	if err := mapstructure.Decode(msgdata, becallice); err != nil {
+		fmt.Println("map to struct failed, err is ", err)
+		return err
 	}
+	fmt.Printf("CSBecallIce data is :%v\n", becallice)
 
 	fmt.Println("caller is ", becallice.Caller)
 	fmt.Println("becalled is ", becallice.BeCalled)
@@ -641,11 +563,9 @@ func ReceiveBeCallIce(conn *websocket.Conn, msgdata string) error {
 		scbecall.Roomid = becallice.Roomid
 		scbecall.Cancel = "server"
 
-		scbecallms, _ := json.Marshal(scbecall)
-
 		jmsg := &jsonproto.JsonMsg{}
 		jmsg.MsgId = common.WEB_SC_TERMINAL_BECALL
-		jmsg.MsgData = string(scbecallms)
+		jmsg.MsgData = scbecall
 		jmsgms, _ := json.Marshal(jmsg)
 		//通知被叫方挂断
 		return SendData(conn, jmsgms)
@@ -661,11 +581,9 @@ func ReceiveBeCallIce(conn *websocket.Conn, msgdata string) error {
 		scbecall.Roomid = becallice.Roomid
 		scbecall.Cancel = "server"
 
-		scbecallms, _ := json.Marshal(scbecall)
-
 		jmsg := &jsonproto.JsonMsg{}
 		jmsg.MsgId = common.WEB_SC_TERMINAL_BECALL
-		jmsg.MsgData = string(scbecallms)
+		jmsg.MsgData = scbecall
 		jmsgms, _ := json.Marshal(jmsg)
 		//通知被叫方挂断
 		return SendData(conn, jmsgms)
@@ -684,11 +602,9 @@ func ReceiveBeCallIce(conn *websocket.Conn, msgdata string) error {
 		scbecall.Roomid = becallice.Roomid
 		scbecall.Cancel = "server"
 
-		scbecallms, _ := json.Marshal(scbecall)
-
 		jmsg := &jsonproto.JsonMsg{}
 		jmsg.MsgId = common.WEB_SC_TERMINAL_BECALL
-		jmsg.MsgData = string(scbecallms)
+		jmsg.MsgData = scbecall
 		jmsgms, _ := json.Marshal(jmsg)
 		//给主叫方推送挂断消息
 		return SendData(conn, jmsgms)
@@ -701,11 +617,10 @@ func ReceiveBeCallIce(conn *websocket.Conn, msgdata string) error {
 	becallicenotify.Caller = becallice.Caller
 	becallicenotify.Roomid = becallice.Roomid
 	becallicenotify.Candidate = becallice.Candidate
-	answernotifyms, _ := json.Marshal(becallicenotify)
 
 	jmsg := &jsonproto.JsonMsg{}
 	jmsg.MsgId = common.WEB_SC_BECALL_ICE_NOTIFY
-	jmsg.MsgData = string(answernotifyms)
+	jmsg.MsgData = becallicenotify
 	jmsgms, _ := json.Marshal(jmsg)
 	return SendData(caller.GetConn(), jmsgms)
 }

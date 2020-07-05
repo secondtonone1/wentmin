@@ -7,12 +7,13 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-var WebMsgMap map[int]func(*websocket.Conn, string) error
+var WebMsgMap map[int]func(*websocket.Conn, interface{}) error
 var WebLogicLock sync.RWMutex
 
 func init() {
-	WebMsgMap = make(map[int]func(*websocket.Conn, string) error)
+	WebMsgMap = make(map[int]func(*websocket.Conn, interface{}) error)
 	RegMsgHandler(common.WEB_CS_USER_REG, UserLogin)
+
 	RegMsgHandler(common.WEB_CS_USER_CALL, UserCall)
 	RegMsgHandler(common.WEB_REPLY_BECALL, UserCallReply)
 	RegMsgHandler(common.WEB_CS_TERMINAL_CALL, UserTerminalCall)
@@ -20,13 +21,14 @@ func init() {
 	RegMsgHandler(common.WEB_CS_BECALL_ANSWER, ReceiveAnswer)
 	RegMsgHandler(common.WEB_CS_CALL_ICE, ReceiveCallIce)
 	RegMsgHandler(common.WEB_CS_BECALL_ICE, ReceiveBeCallIce)
+
 }
 
-func RegMsgHandler(msgid int, handler func(*websocket.Conn, string) error) {
+func RegMsgHandler(msgid int, handler func(*websocket.Conn, interface{}) error) {
 	WebMsgMap[msgid] = handler
 }
 
-func HandleWebMsg(conn *websocket.Conn, msgid int, msgdata string) error {
+func HandleWebMsg(conn *websocket.Conn, msgid int, msgdata interface{}) error {
 	handler, ok := WebMsgMap[msgid]
 	if !ok {
 		return common.ErrMsgIDNotReg
