@@ -53,6 +53,15 @@ var svrConnHandler websocket.Handler = func(ws *websocket.Conn) {
 		defer WebLogicLock.Unlock()
 		UserMgrInst.OnOffline(ws)
 	}()
+	fmt.Println("new connection arraived")
+	/*
+		//校验头部信息
+		var token = ws.Request().Header.Get("token")
+		if token == "" {
+			fmt.Println("connection token empty ")
+			return
+		}
+	*/
 	for {
 
 		var reply string
