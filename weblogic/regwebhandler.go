@@ -1,8 +1,11 @@
 package weblogic
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"runtime"
+	"strconv"
 
 	"wentmin/jsonproto"
 
@@ -41,6 +44,16 @@ var svrConnHandler websocket.Handler = func(conn *websocket.Conn) {
 	}
 }
 */
+
+func GetGID() uint64 {
+	b := make([]byte, 64)
+	b = b[:runtime.Stack(b, false)]
+	b = bytes.TrimPrefix(b, []byte("goroutine "))
+	b = b[:bytes.IndexByte(b, ' ')]
+	n, _ := strconv.ParseUint(string(b), 10, 64)
+	return n
+}
+
 var svrConnHandler websocket.Handler = func(ws *websocket.Conn) {
 	var err error
 	defer func() {
@@ -54,6 +67,7 @@ var svrConnHandler websocket.Handler = func(ws *websocket.Conn) {
 		UserMgrInst.OnOffline(ws)
 	}()
 	fmt.Println("new connection arraived")
+	fmt.Println("cur goroutine is ", GetGID())
 	/*
 		//校验头部信息
 		var token = ws.Request().Header.Get("token")
